@@ -46,6 +46,67 @@ h1 {
   box-shadow: 0 4px 0 #d23369;
 }
 .big-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #d23369; }
+.big-btn.secondary {
+  background: white;
+  color: var(--pink);
+  box-shadow: 0 4px 0 #e8d5c4;
+  margin-top: 12px;
+}
+.big-btn.secondary:active { box-shadow: 0 2px 0 #e8d5c4; }
+
+.level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.level-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 16px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  box-shadow: 0 2px 0 #e8d5c4;
+}
+.level-card:active { transform: translateY(1px); }
+.level-card .badge {
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.level-card.cleared .badge { background: #d8f5ec; }
+.level-card.current { outline: 3px solid var(--pink); }
+.level-card .level-name { font-weight: 700; }
+.level-card .level-sub { font-size: 0.85rem; color: #8a7a8f; }
+
+.quiz-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.quiz-header .bar-track { flex: 1; }
+
+.icon-btn {
+  border: none;
+  background: white;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  padding: 8px 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #e8d5c4;
+}
 
 .status { color: #8a7a8f; }
 

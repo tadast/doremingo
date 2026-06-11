@@ -1,41 +1,70 @@
-// UI glue: cadence → note → answer → resolution → next, with the Bar and
-// persisted progress.
+// UI glue: level map → (cadence → note → answer → resolution)* → clear.
 import { degreeToMidi, resolutionPath, cadenceChords, SOLFEGE } from './theory.js';
 import { Piano } from './audio.js';
-import { createBar, applyAnswer, isFull } from './quiz.js';
+import { createBar, applyAnswer, isFull, createSession } from './quiz.js';
 import { Store } from './store.js';
-
-const TONIC = 60; // C4 for the core loop
-const DEGREE_POOL = [1, 3, 5]; // Level 1: Do Mi Sol
-const BAR_SIZE = 15;
-const LEVEL = 1; // until the level system lands (issue 04)
+import { LEVELS, getLevel } from './levels.js';
 
 const piano = new Piano();
 const store = new Store();
 let state = store.load();
-let bar = createBar(BAR_SIZE, state.bar ?? 0);
+
+let level = null;
+let session = null;
+let bar = null;
+let answering = false;
 
 const el = {
-  startScreen: document.getElementById('start-screen'),
+  homeScreen: document.getElementById('home-screen'),
   quizScreen: document.getElementById('quiz-screen'),
   clearScreen: document.getElementById('clear-screen'),
-  startBtn: document.getElementById('start-btn'),
-  continueBtn: document.getElementById('continue-btn'),
+  journey: document.getElementById('journey'),
+  levelList: document.getElementById('level-list'),
   loadStatus: document.getElementById('load-status'),
+  homeBtn: document.getElementById('home-btn'),
+  levelTitle: document.getElementById('level-title'),
   prompt: document.getElementById('prompt'),
   degrees: document.getElementById('degree-buttons'),
   feedback: document.getElementById('feedback'),
   barFill: document.getElementById('bar-fill'),
+  clearMessage: document.getElementById('clear-message'),
+  nextLevelBtn: document.getElementById('next-level-btn'),
+  mapBtn: document.getElementById('map-btn'),
 };
 
-let currentDegree = null;
-let answering = false;
-
 function showScreen(screen) {
-  for (const s of [el.startScreen, el.quizScreen, el.clearScreen]) {
+  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen]) {
     s.hidden = s !== screen;
   }
 }
+
+// ---------- home / level map ----------
+
+function renderHome() {
+  const cleared = state.clearedLevels.length;
+  el.journey.textContent = cleared
+    ? `${cleared} of ${LEVELS.length} levels cleared`
+    : 'Pick a level — Home base is a great start';
+
+  el.levelList.replaceChildren(
+    ...LEVELS.map((l) => {
+      const card = document.createElement('button');
+      const isCleared = state.clearedLevels.includes(l.id);
+      const isCurrent = state.currentLevel === l.id && !isCleared;
+      card.className = `level-card${isCleared ? ' cleared' : ''}${isCurrent ? ' current' : ''}`;
+      card.innerHTML = `
+        <span class="badge">${isCleared ? '⭐' : l.id}</span>
+        <span>
+          <span class="level-name">${l.name}</span><br>
+          <span class="level-sub">${l.subtitle}</span>
+        </span>`;
+      card.addEventListener('click', () => startLevel(l.id));
+      return card;
+    }),
+  );
+}
+
+// ---------- quiz ----------
 
 function renderBar() {
   el.barFill.style.width = `${(bar.value / bar.size) * 100}%`;
@@ -43,7 +72,7 @@ function renderBar() {
 
 function buildButtons() {
   el.degrees.replaceChildren(
-    ...DEGREE_POOL.map((d) => {
+    ...level.degrees.map((d) => {
       const btn = document.createElement('button');
       btn.className = 'degree-btn';
       btn.dataset.degree = String(d);
@@ -64,29 +93,26 @@ function clearMarks() {
   }
 }
 
-function pickDegree() {
-  let d;
-  do {
-    d = DEGREE_POOL[Math.floor(Math.random() * DEGREE_POOL.length)];
-  } while (DEGREE_POOL.length > 1 && d === currentDegree);
-  return d;
-}
-
 function ask() {
   clearMarks();
   setButtonsEnabled(false);
   el.feedback.textContent = '';
   el.feedback.className = 'feedback';
-  el.prompt.textContent = 'Listen… this is home 🏠';
 
-  currentDegree = pickDegree();
-  const noteMidi = degreeToMidi(TONIC, currentDegree);
+  const cadence = session.cadenceDue();
+  const degree = session.next();
+  const noteMidi = degreeToMidi(level.tonic, degree);
 
   let t = piano.now + 0.1;
-  for (const chord of cadenceChords(TONIC)) {
-    t = piano.playChord(chord, t, 0.55) + 0.05;
+  if (cadence) {
+    el.prompt.textContent = 'Listen… this is home 🏠';
+    for (const chord of cadenceChords(level.tonic)) {
+      t = piano.playChord(chord, t, 0.55) + 0.05;
+    }
+    t += 0.4;
+  } else {
+    el.prompt.textContent = 'Listen…';
   }
-  t += 0.4;
   piano.playNote(noteMidi, t, 1.2, 0.95);
 
   const msUntilAnswerable = (t - piano.now) * 1000 + 300;
@@ -98,15 +124,21 @@ function ask() {
 }
 
 function persist() {
-  store.save({ ...state, currentLevel: LEVEL, bar: bar.value });
+  store.save({ ...state, currentLevel: level.id, bar: bar.value });
 }
 
 function levelCleared() {
-  if (!state.clearedLevels.includes(LEVEL)) {
-    state.clearedLevels = [...state.clearedLevels, LEVEL];
+  if (!state.clearedLevels.includes(level.id)) {
+    state.clearedLevels = [...state.clearedLevels, level.id];
   }
-  bar = createBar(BAR_SIZE, 0);
-  persist();
+  state.bar = null;
+  store.save({ ...state, currentLevel: level.id, bar: null });
+
+  const next = getLevel(level.id + 1);
+  el.clearMessage.textContent = next
+    ? `Your ear is getting sharper. Next up: ${next.name} 🦩`
+    : 'You cleared every level — what an ear! 🦩';
+  el.nextLevelBtn.hidden = !next;
   showScreen(el.clearScreen);
 }
 
@@ -115,26 +147,26 @@ function answer(degree, btn) {
   answering = false;
   setButtonsEnabled(false);
 
-  const noteMidi = degreeToMidi(TONIC, currentDegree);
-  const correct = degree === currentDegree;
+  const asked = session.currentDegree;
+  const noteMidi = degreeToMidi(level.tonic, asked);
+  const correct = session.recordAnswer(degree);
   bar = applyAnswer(bar, correct);
   renderBar();
   persist();
 
   if (correct) {
     btn.classList.add('correct');
-    el.feedback.textContent = `Yes! That was ${SOLFEGE[currentDegree]} 🎉`;
+    el.feedback.textContent = `Yes! That was ${SOLFEGE[asked]} 🎉`;
     el.feedback.className = 'feedback good';
   } else {
     btn.classList.add('wrong');
-    const rightBtn = el.degrees.querySelector(`[data-degree="${currentDegree}"]`);
-    rightBtn?.classList.add('correct');
-    el.feedback.textContent = `It was ${SOLFEGE[currentDegree]} — hear it walk home`;
+    el.degrees.querySelector(`[data-degree="${asked}"]`)?.classList.add('correct');
+    el.feedback.textContent = `It was ${SOLFEGE[asked]} — hear it walk home`;
     el.feedback.className = 'feedback bad';
   }
 
   // Resolution: the note walks home to Do (the teaching device, ADR-0001)
-  const end = piano.playSequence(resolutionPath(TONIC, noteMidi), piano.now + 0.45);
+  const end = piano.playSequence(resolutionPath(level.tonic, noteMidi), piano.now + 0.45);
   const msUntilNext = (end - piano.now) * 1000 + 700;
   setTimeout(() => {
     if (isFull(bar)) levelCleared();
@@ -142,33 +174,50 @@ function answer(degree, btn) {
   }, msUntilNext);
 }
 
-async function start() {
-  el.startBtn.disabled = true;
+async function startLevel(id) {
   el.loadStatus.hidden = false;
   try {
     await piano.init();
   } catch (err) {
     el.loadStatus.textContent = 'Could not load the piano — check your connection and reload.';
-    el.startBtn.disabled = false;
     console.error(err);
     return;
   }
-  showScreen(el.quizScreen);
+  el.loadStatus.hidden = true;
+
+  level = getLevel(id);
+  session = createSession(level);
+  const resumeBar = state.currentLevel === id ? state.bar ?? 0 : 0;
+  bar = createBar(level.barSize, resumeBar);
+  state.currentLevel = id;
+  persist();
+
+  el.levelTitle.textContent = `Level ${level.id} — ${level.name}`;
   buildButtons();
   renderBar();
+  showScreen(el.quizScreen);
   ask();
 }
 
+// ---------- wiring ----------
+
+el.homeBtn.addEventListener('click', () => {
+  answering = false;
+  renderHome();
+  showScreen(el.homeScreen);
+});
+el.nextLevelBtn.addEventListener('click', () => startLevel(level.id + 1));
+el.mapBtn.addEventListener('click', () => {
+  renderHome();
+  showScreen(el.homeScreen);
+});
+
 // Test hook for browser automation — not part of the game API.
 window.__doremingo = {
-  get currentDegree() { return currentDegree; },
+  get currentDegree() { return session?.currentDegree; },
   get bar() { return bar; },
   get answering() { return answering; },
+  get level() { return level; },
 };
 
-el.startBtn.addEventListener('click', start);
-el.continueBtn.addEventListener('click', () => {
-  renderBar();
-  showScreen(el.quizScreen);
-  ask();
-});
+renderHome();
