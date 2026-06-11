@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DoReMingo — learn to hear notes</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="app">
+    <section id="start-screen" class="screen">
+      <h1>DoReMingo</h1>
+      <p class="tagline">Hear a note. Feel where it lives. 🦩</p>
+      <button id="start-btn" class="big-btn">Tap to play</button>
+      <p id="load-status" class="status" hidden>Warming up the piano…</p>
+    </section>
+
+    <section id="quiz-screen" class="screen" hidden>
+      <p id="prompt" class="prompt">Listen…</p>
+      <div id="degree-buttons" class="degrees"></div>
+      <p id="feedback" class="feedback"></p>
+    </section>
+  </main>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

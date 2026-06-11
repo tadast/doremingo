@@ -1,0 +1,99 @@
+:root {
+  --bg: #fff7ed;
+  --ink: #3b2d3f;
+  --pink: #ff5d8f;
+  --yellow: #ffd166;
+  --green: #06d6a0;
+  --blue: #4cc9f0;
+  --red: #ef476f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+}
+
+.screen {
+  text-align: center;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+}
+
+h1 {
+  font-size: 3rem;
+  margin: 0 0 8px;
+  color: var(--pink);
+}
+
+.tagline { font-size: 1.1rem; margin-bottom: 32px; }
+
+.big-btn {
+  font-size: 1.4rem;
+  padding: 18px 36px;
+  border: none;
+  border-radius: 999px;
+  background: var(--pink);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #d23369;
+}
+.big-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #d23369; }
+
+.status { color: #8a7a8f; }
+
+.prompt { font-size: 1.3rem; min-height: 2em; }
+
+.degrees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.degree-btn {
+  min-width: 88px;
+  min-height: 88px;
+  border: none;
+  border-radius: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: transform 0.1s;
+}
+.degree-btn:disabled { opacity: 0.45; }
+.degree-btn:not(:disabled):active { transform: scale(0.95); }
+.degree-btn .num { font-size: 0.9rem; font-weight: 400; opacity: 0.85; }
+
+.degree-btn[data-degree="1"] { background: var(--pink); }
+.degree-btn[data-degree="2"] { background: #f4845f; }
+.degree-btn[data-degree="3"] { background: var(--yellow); color: var(--ink); }
+.degree-btn[data-degree="4"] { background: var(--green); }
+.degree-btn[data-degree="5"] { background: var(--blue); }
+.degree-btn[data-degree="6"] { background: #7b6cf6; }
+.degree-btn[data-degree="7"] { background: #c66cf6; }
+
+.degree-btn.correct { outline: 4px solid var(--green); }
+.degree-btn.wrong { outline: 4px solid var(--red); }
+
+.feedback {
+  font-size: 1.2rem;
+  min-height: 2em;
+  font-weight: 600;
+}
+.feedback.good { color: #04a47b; }
+.feedback.bad { color: var(--red); }
