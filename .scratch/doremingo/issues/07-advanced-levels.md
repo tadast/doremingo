@@ -1,6 +1,6 @@
 # 07 — Advanced levels: chromatic, minor, random keys
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

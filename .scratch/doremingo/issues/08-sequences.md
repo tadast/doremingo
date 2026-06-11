@@ -1,6 +1,6 @@
 # 08 — Sequence levels (2–3 notes)
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

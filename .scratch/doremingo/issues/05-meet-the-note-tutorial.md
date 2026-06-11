@@ -1,6 +1,6 @@
 # 05 — Meet-the-Note and first-run tutorial
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

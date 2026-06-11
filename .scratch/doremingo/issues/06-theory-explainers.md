@@ -1,6 +1,6 @@
 # 06 — Theory explainers between levels
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

@@ -1,6 +1,6 @@
 # 10 — Input and playback polish
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

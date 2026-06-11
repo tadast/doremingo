@@ -5,6 +5,7 @@ import { createBar, applyAnswer, isFull, createSession } from './quiz.js';
 import { Store } from './store.js';
 import { LEVELS, getLevel } from './levels.js';
 import { THEORY } from './content.js';
+import { FLAMINGO, HAND_SIGNS } from './art.js';
 
 const piano = new Piano();
 const store = new Store();
@@ -21,6 +22,7 @@ let pendingAnswer = []; // taps so far on a sequence level
 let resolving = false;
 let nextTimeout = null;
 let afterResolution = null;
+let streak = 0;
 
 const el = {
   homeScreen: document.getElementById('home-screen'),
@@ -53,7 +55,31 @@ const el = {
   theoryTitle: document.getElementById('theory-title'),
   theoryBody: document.getElementById('theory-body'),
   theoryNextBtn: document.getElementById('theory-next-btn'),
+  homeMascot: document.getElementById('home-mascot'),
+  quizMascot: document.getElementById('quiz-mascot'),
+  clearMascot: document.getElementById('clear-mascot'),
 };
+
+for (const m of [el.homeMascot, el.quizMascot, el.clearMascot]) m.innerHTML = FLAMINGO;
+
+function setMascot(state) {
+  el.quizMascot.className = `mascot mascot-sm${state ? ` ${state}` : ''}`;
+}
+
+function confettiBurst() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#ff5d8f', '#ffd166', '#06d6a0', '#4cc9f0', '#7b6cf6'];
+  for (let i = 0; i < 50; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = `${Math.random() * 100}vw`;
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDuration = `${1.8 + Math.random() * 1.6}s`;
+    piece.style.animationDelay = `${Math.random() * 0.5}s`;
+    document.body.append(piece);
+    setTimeout(() => piece.remove(), 4200);
+  }
+}
 
 function showScreen(screen) {
   for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen, el.theoryScreen]) {
@@ -252,7 +278,8 @@ function buildButtons() {
       const btn = document.createElement('button');
       btn.className = 'degree-btn';
       btn.dataset.degree = String(d);
-      btn.innerHTML = `<span>${info.name}</span><span class="num">${info.label}</span>`;
+      const sign = HAND_SIGNS[d] ? `<span class="sign">${HAND_SIGNS[d]}</span>` : '';
+      btn.innerHTML = `${sign}<span>${info.name}</span><span class="num">${info.label}</span>`;
       btn.addEventListener('click', (e) => {
         e.stopPropagation(); // don't let the answering tap skip its own resolution
         answer(d, btn);
@@ -333,6 +360,7 @@ function ask() {
   setReplaysEnabled(false);
   el.feedback.textContent = '';
   el.feedback.className = 'feedback';
+  setMascot(null);
   pendingAnswer = [];
 
   const cadence = session.cadenceDue();
@@ -386,6 +414,12 @@ function levelCleared() {
     : 'You cleared every level — what an ear! 🦩';
   el.nextLevelBtn.hidden = !next;
   showScreen(el.clearScreen);
+  confettiBurst();
+  // a happy little Do-Mi-Sol-Do fanfare
+  piano.playSequence(
+    [tonic, tonic + (mode === 'minor' ? 3 : 4), tonic + 7, tonic + 12],
+    piano.now + 0.2, 0.18, 0.03,
+  );
 }
 
 function answer(degree, btn) {
@@ -414,16 +448,22 @@ function finishQuestion(correct, btn) {
 
   const names = [].concat(asked).map((d) => degreeInfo(d, mode).name).join(' → ');
   if (correct) {
+    streak += 1;
     btn?.classList.add('correct');
-    el.feedback.textContent = `Yes! That was ${names} 🎉`;
+    const cheer = streak >= 7 ? '🔥🦩🔥' : streak >= 5 ? '🔥🔥' : streak >= 3 ? '🔥' : '🎉';
+    const streakNote = streak >= 3 ? ` <span class="streak-pop">${cheer} ${streak} in a row!</span>` : ` ${cheer}`;
+    el.feedback.innerHTML = `Yes! That was ${names}${streakNote}`;
     el.feedback.className = 'feedback good';
+    setMascot(streak >= 5 ? 'party' : 'good');
   } else {
+    streak = 0;
     btn?.classList.add('wrong');
     if (seqLen() === 1) {
       el.degrees.querySelector(`[data-degree="${asked}"]`)?.classList.add('correct');
     }
     el.feedback.textContent = `It was ${names} — hear it walk home`;
     el.feedback.className = 'feedback bad';
+    setMascot('bad');
   }
   if (seqLen() > 1) renderSlots('verdict');
 
@@ -479,6 +519,7 @@ async function startLevel(id) {
 
   level = getLevel(id);
   session = createSession(level);
+  streak = 0;
   mode = level.mode ?? 'major';
   tonic = level.keyPool === 'random'
     ? 55 + Math.floor(Math.random() * 12) // G3-F#4 — keeps wide octaves in sample range

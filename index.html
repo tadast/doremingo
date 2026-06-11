@@ -9,8 +9,9 @@
 <body>
   <main id="app">
     <section id="home-screen" class="screen">
+      <div id="home-mascot" class="mascot mascot-lg"></div>
       <h1>DoReMingo</h1>
-      <p class="tagline">Hear a note. Feel where it lives. 🦩</p>
+      <p class="tagline">Hear a note. Feel where it lives.</p>
       <p id="journey" class="status"></p>
       <div id="level-list" class="level-list"></div>
       <button id="tutorial-btn" class="big-btn secondary">How it works 🎓</button>
@@ -47,11 +48,15 @@
         <button id="replay-cadence-btn" class="chip-btn" disabled>🏠 Hear home</button>
         <button id="backspace-btn" class="chip-btn" hidden>⌫ Undo</button>
       </div>
-      <p id="feedback" class="feedback"></p>
+      <div class="feedback-row">
+        <div id="quiz-mascot" class="mascot mascot-sm"></div>
+        <p id="feedback" class="feedback"></p>
+      </div>
       <p class="status kbd-hint">Keys: 1–7 answer · space replays · C plays home</p>
     </section>
 
     <section id="clear-screen" class="screen" hidden>
+      <div id="clear-mascot" class="mascot mascot-lg party"></div>
       <h1>Level cleared! 🎉</h1>
       <p id="clear-message" class="tagline">Your ear is getting sharper. 🦩</p>
       <button id="next-level-btn" class="big-btn">Next level</button>

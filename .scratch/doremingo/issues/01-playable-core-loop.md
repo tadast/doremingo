@@ -1,6 +1,6 @@
 # 01 — Playable core loop
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 

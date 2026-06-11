@@ -1,6 +1,6 @@
 # 09 — Visual identity: mascot, theme, hand signs, celebrations
 
-Status: ready-for-human
+Status: in-review (design)
 
 ## Parent
 

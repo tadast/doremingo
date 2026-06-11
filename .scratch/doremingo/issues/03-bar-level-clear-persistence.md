@@ -1,6 +1,6 @@
 # 03 — Bar, level clear, persistence
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 
