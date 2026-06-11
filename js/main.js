@@ -46,6 +46,7 @@ const el = {
   backspaceBtn: document.getElementById('backspace-btn'),
   slots: document.getElementById('answer-slots'),
   walk: document.getElementById('walk'),
+  meetWalk: document.getElementById('meet-walk'),
   nextLevelBtn: document.getElementById('next-level-btn'),
   mapBtn: document.getElementById('map-btn'),
   meetTitle: document.getElementById('meet-title'),
@@ -210,8 +211,19 @@ function buildStageButton(degree, withResolution, stageTonic = 60, stageMode = '
   btn.innerHTML = `<span>${info.name}</span><span class="num">${info.label}</span>`;
   btn.addEventListener('click', () => {
     const midi = degreeToMidi(stageTonic, degree, 0, stageMode);
-    if (withResolution) piano.playSequence(resolutionPath(stageTonic, midi, stageMode), piano.now + 0.05, 0.5);
-    else piano.playNote(midi, piano.now + 0.05, 1.2, 0.95);
+    if (withResolution) {
+      const path = resolutionPath(stageTonic, midi, stageMode);
+      piano.playSequence(path, piano.now + 0.05, 0.5);
+      scheduleHighlights(path, 0.05, {
+        walkEl: el.meetWalk,
+        withButtons: false,
+        walkTonic: stageTonic,
+        walkMode: stageMode,
+        noteDuration: 0.5,
+      });
+    } else {
+      piano.playNote(midi, piano.now + 0.05, 1.2, 0.95);
+    }
   });
   return btn;
 }
@@ -224,6 +236,7 @@ function renderMeetStep() {
   el.meetStage.replaceChildren(
     ...(s.stage ? [buildStageButton(s.stage, s.resolve, s.tonic ?? 60, s.mode ?? 'major')] : []),
   );
+  el.meetWalk.replaceChildren();
   if (s.sound === 'cadence') {
     let t = piano.now + 0.3;
     for (const chord of cadenceChords(s.tonic ?? 60)) {
@@ -307,27 +320,37 @@ function clearHighlights() {
   highlightTimeouts = [];
   for (const b of el.degrees.querySelectorAll('.playing')) b.classList.remove('playing');
   el.walk.replaceChildren();
+  el.meetWalk.replaceChildren();
 }
 
 /**
- * Show the resolution walk as a row of note names, lighting each name (and
- * its degree button, when the level shows one) while that note sounds.
+ * Show a resolution walk as a row of note names, lighting each name (and
+ * its degree button, when buttons are in play) while that note sounds.
  * Matches a playSequence(midis, startDelay, noteDuration, gap) schedule.
  */
-function scheduleHighlights(midis, startDelaySec, noteDuration = 0.45, gap = 0.05) {
+function scheduleHighlights(midis, startDelaySec, {
+  walkEl = el.walk,
+  withButtons = true,
+  walkTonic = tonic,
+  walkMode = mode,
+  noteDuration = 0.45,
+  gap = 0.05,
+} = {}) {
   const stepMs = (noteDuration + gap) * 1000;
   const spans = midis.map((midi) => {
-    const key = midiToDegree(tonic, midi, mode);
+    const key = midiToDegree(walkTonic, midi, walkMode);
     const span = document.createElement('span');
     span.className = 'walk-note';
-    span.textContent = key === null ? '·' : degreeInfo(key, mode).name;
+    span.textContent = key === null ? '·' : degreeInfo(key, walkMode).name;
     return span;
   });
-  el.walk.replaceChildren(...spans);
+  walkEl.replaceChildren(...spans);
 
   midis.forEach((midi, i) => {
-    const key = midiToDegree(tonic, midi, mode);
-    const btn = key === null ? null : el.degrees.querySelector(`[data-degree="${key}"]`);
+    const key = midiToDegree(walkTonic, midi, walkMode);
+    const btn = withButtons && key !== null
+      ? el.degrees.querySelector(`[data-degree="${key}"]`)
+      : null;
     highlightTimeouts.push(setTimeout(() => {
       spans[i].classList.add('lit');
       btn?.classList.add('playing');
