@@ -1,6 +1,6 @@
 # 02 — Deploy to GitHub Pages
 
-Status: ready-for-agent
+Status: done
 
 ## Parent
 
