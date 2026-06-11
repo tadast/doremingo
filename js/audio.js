@@ -14,23 +14,45 @@ export class Piano {
     this.baseUrl = baseUrl;
     this.ctx = null;
     this.buffers = new Map();
+    this.active = new Set();
   }
 
   /** Create/resume the AudioContext and load all samples. Call from a user gesture. */
-  async init() {
+  async init(onProgress = () => {}) {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
     await this.ctx.resume();
-    if (this.buffers.size === Object.keys(SAMPLES).length) return;
+    const total = Object.keys(SAMPLES).length;
+    if (this.buffers.size === total) return;
+    let loaded = 0;
     await Promise.all(
       Object.entries(SAMPLES).map(async ([midi, name]) => {
+        if (this.buffers.has(Number(midi))) {
+          loaded += 1;
+          onProgress(loaded, total);
+          return;
+        }
         const res = await fetch(`${this.baseUrl}/${name}.mp3`);
         if (!res.ok) throw new Error(`sample fetch failed: ${name}`);
         const buf = await this.ctx.decodeAudioData(await res.arrayBuffer());
         this.buffers.set(Number(midi), buf);
+        loaded += 1;
+        onProgress(loaded, total);
       }),
     );
+  }
+
+  /** Stop everything currently sounding or scheduled. */
+  stopAll() {
+    for (const src of this.active) {
+      try {
+        src.stop();
+      } catch {
+        // already stopped
+      }
+    }
+    this.active.clear();
   }
 
   get now() {
@@ -60,6 +82,8 @@ export class Piano {
     g.gain.setValueAtTime(gain, when);
     g.gain.setTargetAtTime(0, when + duration, 0.08);
     src.connect(g).connect(this.ctx.destination);
+    this.active.add(src);
+    src.onended = () => this.active.delete(src);
     src.start(when);
     src.stop(when + duration + 0.5);
     return when + duration;

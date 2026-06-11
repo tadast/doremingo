@@ -134,9 +134,38 @@ h1 {
   background: white;
   border-radius: 12px;
   font-size: 1.2rem;
+  min-width: 44px;
+  min-height: 44px;
   padding: 8px 10px;
   cursor: pointer;
   box-shadow: 0 2px 0 #e8d5c4;
+}
+
+.book-btn { min-width: 44px; min-height: 44px; }
+
+.replays {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.chip-btn {
+  border: none;
+  background: white;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.95rem;
+  min-height: 44px;
+  padding: 8px 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #e8d5c4;
+}
+.chip-btn:disabled { opacity: 0.4; }
+
+.kbd-hint { font-size: 0.75rem; }
+@media (pointer: coarse) {
+  .kbd-hint { display: none; }
 }
 
 .status { color: #8a7a8f; }

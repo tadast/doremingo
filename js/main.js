@@ -14,6 +14,10 @@ let level = null;
 let session = null;
 let bar = null;
 let answering = false;
+let currentNoteMidi = null;
+let resolving = false;
+let nextTimeout = null;
+let afterResolution = null;
 
 const el = {
   homeScreen: document.getElementById('home-screen'),
@@ -31,6 +35,8 @@ const el = {
   feedback: document.getElementById('feedback'),
   barFill: document.getElementById('bar-fill'),
   clearMessage: document.getElementById('clear-message'),
+  replayNoteBtn: document.getElementById('replay-note-btn'),
+  replayCadenceBtn: document.getElementById('replay-cadence-btn'),
   nextLevelBtn: document.getElementById('next-level-btn'),
   mapBtn: document.getElementById('map-btn'),
   meetTitle: document.getElementById('meet-title'),
@@ -52,6 +58,9 @@ function showScreen(screen) {
 
 function goHome() {
   answering = false;
+  resolving = false;
+  clearTimeout(nextTimeout);
+  piano.stopAll?.();
   renderHome();
   showScreen(el.homeScreen);
 }
@@ -235,7 +244,10 @@ function buildButtons() {
       btn.className = 'degree-btn';
       btn.dataset.degree = String(d);
       btn.innerHTML = `<span>${SOLFEGE[d]}</span><span class="num">${d}</span>`;
-      btn.addEventListener('click', () => answer(d, btn));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // don't let the answering tap skip its own resolution
+        answer(d, btn);
+      });
       return btn;
     }),
   );
@@ -251,15 +263,35 @@ function clearMarks() {
   }
 }
 
+function setReplaysEnabled(enabled) {
+  el.replayNoteBtn.disabled = !enabled;
+  el.replayCadenceBtn.disabled = !enabled;
+}
+
+function replayNote() {
+  if (currentNoteMidi === null || resolving) return;
+  piano.playNote(currentNoteMidi, piano.now + 0.05, 1.2, 0.95);
+}
+
+function replayCadence() {
+  if (resolving) return;
+  let t = piano.now + 0.05;
+  for (const chord of cadenceChords(level.tonic)) {
+    t = piano.playChord(chord, t, 0.55) + 0.05;
+  }
+}
+
 function ask() {
   clearMarks();
   setButtonsEnabled(false);
+  setReplaysEnabled(false);
   el.feedback.textContent = '';
   el.feedback.className = 'feedback';
 
   const cadence = session.cadenceDue();
   const degree = session.next();
   const noteMidi = degreeToMidi(level.tonic, degree);
+  currentNoteMidi = noteMidi;
 
   let t = piano.now + 0.1;
   if (cadence) {
@@ -274,9 +306,10 @@ function ask() {
   piano.playNote(noteMidi, t, 1.2, 0.95);
 
   const msUntilAnswerable = (t - piano.now) * 1000 + 300;
-  setTimeout(() => {
+  nextTimeout = setTimeout(() => {
     el.prompt.textContent = 'Which note was that?';
     setButtonsEnabled(true);
+    setReplaysEnabled(true);
     answering = true;
   }, msUntilAnswerable);
 }
@@ -324,12 +357,25 @@ function answer(degree, btn) {
   }
 
   // Resolution: the note walks home to Do (the teaching device, ADR-0001)
-  const end = piano.playSequence(resolutionPath(level.tonic, noteMidi), piano.now + 0.45);
-  const msUntilNext = (end - piano.now) * 1000 + 700;
-  setTimeout(() => {
+  resolving = true;
+  setReplaysEnabled(false);
+  afterResolution = () => {
+    resolving = false;
+    afterResolution = null;
     if (isFull(bar)) levelCleared();
     else ask();
-  }, msUntilNext);
+  };
+  const end = piano.playSequence(resolutionPath(level.tonic, noteMidi), piano.now + 0.45);
+  const msUntilNext = (end - piano.now) * 1000 + 700;
+  nextTimeout = setTimeout(() => afterResolution?.(), msUntilNext);
+}
+
+// Tap anywhere on the quiz screen during the resolution to skip it.
+function skipResolution() {
+  if (!resolving) return;
+  clearTimeout(nextTimeout);
+  piano.stopAll();
+  afterResolution?.();
 }
 
 function enterQuiz() {
@@ -342,10 +388,17 @@ function enterQuiz() {
 
 async function startLevel(id) {
   el.loadStatus.hidden = false;
+  el.loadStatus.textContent = 'Warming up the piano…';
   try {
-    await piano.init();
+    await piano.init((loaded, total) => {
+      el.loadStatus.textContent = `Warming up the piano… ${loaded}/${total}`;
+    });
   } catch (err) {
-    el.loadStatus.textContent = 'Could not load the piano — check your connection and reload.';
+    el.loadStatus.textContent = 'Could not load the piano — tap here to retry 🔁';
+    el.loadStatus.onclick = () => {
+      el.loadStatus.onclick = null;
+      startLevel(id);
+    };
     console.error(err);
     return;
   }
@@ -390,6 +443,23 @@ el.tutorialBtn.addEventListener('click', startTutorial);
 el.meetNextBtn.addEventListener('click', () => meetNext(false));
 el.meetSkipBtn.addEventListener('click', () => meetNext(true));
 el.theoryNextBtn.addEventListener('click', () => theoryOnDone?.());
+el.replayNoteBtn.addEventListener('click', replayNote);
+el.replayCadenceBtn.addEventListener('click', replayCadence);
+el.quizScreen.addEventListener('click', skipResolution);
+
+document.addEventListener('keydown', (e) => {
+  if (el.quizScreen.hidden || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key >= '1' && e.key <= '7') {
+    const btn = el.degrees.querySelector(`[data-degree="${e.key}"]`);
+    if (btn && !btn.disabled) btn.click();
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    if (resolving) skipResolution();
+    else replayNote();
+  } else if (e.key.toLowerCase() === 'c') {
+    replayCadence();
+  }
+});
 
 // Test hook for browser automation — not part of the game API.
 window.__doremingo = {
