@@ -111,6 +111,28 @@ export const LEVELS = [
     cadenceEvery: 1,
     newDegrees: [],
   },
+  {
+    id: 11,
+    name: 'Two-note tunes',
+    subtitle: 'Hear a tiny melody, name both notes',
+    degrees: [1, 2, 3, 4, 5, 6, 7],
+    sequenceLength: 2,
+    barSize: 12,
+    cadenceEvery: 1,
+    tonic: 60,
+    newDegrees: [],
+  },
+  {
+    id: 12,
+    name: 'Three-note tunes',
+    subtitle: 'Real melody fragments, any key',
+    degrees: [1, 2, 3, 4, 5, 6, 7],
+    sequenceLength: 3,
+    keyPool: 'random',
+    barSize: 12,
+    cadenceEvery: 1,
+    newDegrees: [],
+  },
 ];
 
 export function getLevel(id) {

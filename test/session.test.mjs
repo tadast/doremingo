@@ -89,6 +89,32 @@ test('cadence policy: every question vs once per run', () => {
   assert.equal(once.cadenceDue(), false);
 });
 
+test('sequence levels produce in-pool, no-adjacent-repeat melodies', () => {
+  for (const id of [11, 12]) {
+    const lvl = getLevel(id);
+    const session = createSession(lvl, seededRng(id));
+    for (let i = 0; i < 50; i++) {
+      const q = session.next();
+      assert.equal(q.length, lvl.sequenceLength);
+      assert.ok(q.every((d) => lvl.degrees.includes(d)));
+      for (let j = 1; j < q.length; j++) assert.notEqual(q[j], q[j - 1]);
+    }
+  }
+});
+
+test('sequence grading is all-or-nothing and re-queues misses', () => {
+  const session = createSession(getLevel(11), seededRng(5));
+  const q = session.next();
+  assert.equal(session.recordAnswer([...q]), true);
+  const q2 = session.next();
+  const wrong = [...q2];
+  wrong[1] = wrong[1] === 1 ? 2 : 1;
+  if (String(wrong) === String(q2)) wrong[1] = 3;
+  assert.equal(session.recordAnswer(wrong), false);
+  const upcoming = [session.next(), session.next(), session.next()].map(String);
+  assert.ok(upcoming.includes(String(q2)), `${q2} not in ${upcoming}`);
+});
+
 test('every level degree is a valid key in its mode', () => {
   for (const level of LEVELS) {
     const mode = level.mode ?? 'major';

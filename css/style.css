@@ -163,6 +163,27 @@ h1 {
 }
 .chip-btn:disabled { opacity: 0.4; }
 
+.slots {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 8px 0;
+}
+.slot {
+  min-width: 56px;
+  min-height: 48px;
+  border-radius: 14px;
+  background: white;
+  box-shadow: inset 0 0 0 2px #e8d5c4;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.slot.filled { box-shadow: inset 0 0 0 2px var(--blue); }
+.slot.good { background: #d8f5ec; box-shadow: inset 0 0 0 2px var(--green); }
+.slot.bad { background: #fde3e9; box-shadow: inset 0 0 0 2px var(--red); }
+
 .kbd-hint { font-size: 0.75rem; }
 @media (pointer: coarse) {
   .kbd-hint { display: none; }

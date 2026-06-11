@@ -16,7 +16,8 @@ let bar = null;
 let tonic = 60;
 let mode = 'major';
 let answering = false;
-let currentNoteMidi = null;
+let currentNoteMidis = []; // the question's notes (one, or a sequence)
+let pendingAnswer = []; // taps so far on a sequence level
 let resolving = false;
 let nextTimeout = null;
 let afterResolution = null;
@@ -39,6 +40,8 @@ const el = {
   clearMessage: document.getElementById('clear-message'),
   replayNoteBtn: document.getElementById('replay-note-btn'),
   replayCadenceBtn: document.getElementById('replay-cadence-btn'),
+  backspaceBtn: document.getElementById('backspace-btn'),
+  slots: document.getElementById('answer-slots'),
   nextLevelBtn: document.getElementById('next-level-btn'),
   mapBtn: document.getElementById('map-btn'),
   meetTitle: document.getElementById('meet-title'),
@@ -275,8 +278,12 @@ function setReplaysEnabled(enabled) {
 }
 
 function replayNote() {
-  if (currentNoteMidi === null || resolving) return;
-  piano.playNote(currentNoteMidi, piano.now + 0.05, 1.2, 0.95);
+  if (!currentNoteMidis.length || resolving) return;
+  if (currentNoteMidis.length === 1) {
+    piano.playNote(currentNoteMidis[0], piano.now + 0.05, 1.2, 0.95);
+  } else {
+    piano.playSequence(currentNoteMidis, piano.now + 0.05, 0.55, 0.1);
+  }
 }
 
 function replayCadence() {
@@ -287,19 +294,53 @@ function replayCadence() {
   }
 }
 
+function seqLen() {
+  return level.sequenceLength ?? 1;
+}
+
+function renderSlots(verdict = null) {
+  if (seqLen() === 1) {
+    el.slots.hidden = true;
+    return;
+  }
+  el.slots.hidden = false;
+  const asked = [].concat(session.currentDegree ?? []);
+  el.slots.replaceChildren(
+    ...Array.from({ length: seqLen() }, (_, i) => {
+      const slot = document.createElement('span');
+      slot.className = 'slot';
+      const picked = pendingAnswer[i];
+      if (picked !== undefined) {
+        slot.classList.add('filled');
+        slot.textContent = degreeInfo(picked, mode).name;
+      }
+      if (verdict) {
+        slot.classList.remove('filled');
+        slot.classList.add(picked === asked[i] ? 'good' : 'bad');
+        if (picked !== asked[i]) {
+          slot.textContent = `${degreeInfo(picked, mode).name}→${degreeInfo(asked[i], mode).name}`;
+        }
+      }
+      return slot;
+    }),
+  );
+  el.backspaceBtn.disabled = !answering || pendingAnswer.length === 0 || !!verdict;
+}
+
 function ask() {
   clearMarks();
   setButtonsEnabled(false);
   setReplaysEnabled(false);
   el.feedback.textContent = '';
   el.feedback.className = 'feedback';
+  pendingAnswer = [];
 
   const cadence = session.cadenceDue();
-  const degree = session.next();
+  const question = session.next();
+  const degrees = [].concat(question);
   const octaves = level.octaves ?? [0];
   const octave = octaves[Math.floor(Math.random() * octaves.length)];
-  const noteMidi = degreeToMidi(tonic, degree, octave, mode);
-  currentNoteMidi = noteMidi;
+  currentNoteMidis = degrees.map((d) => degreeToMidi(tonic, d, octave, mode));
 
   let t = piano.now + 0.1;
   if (cadence) {
@@ -311,14 +352,20 @@ function ask() {
   } else {
     el.prompt.textContent = 'Listen…';
   }
-  piano.playNote(noteMidi, t, 1.2, 0.95);
+  if (currentNoteMidis.length === 1) {
+    t = piano.playNote(currentNoteMidis[0], t, 1.2, 0.95);
+  } else {
+    t = piano.playSequence(currentNoteMidis, t, 0.55, 0.1);
+  }
+  renderSlots();
 
   const msUntilAnswerable = (t - piano.now) * 1000 + 300;
   nextTimeout = setTimeout(() => {
-    el.prompt.textContent = 'Which note was that?';
+    el.prompt.textContent = seqLen() === 1 ? 'Which note was that?' : 'Which notes were those, in order?';
     setButtonsEnabled(true);
     setReplaysEnabled(true);
     answering = true;
+    renderSlots();
   }, msUntilAnswerable);
 }
 
@@ -343,29 +390,44 @@ function levelCleared() {
 
 function answer(degree, btn) {
   if (!answering) return;
+
+  if (seqLen() > 1) {
+    pendingAnswer.push(degree);
+    piano.playNote(degreeToMidi(tonic, degree, 0, mode), piano.now + 0.02, 0.4, 0.6);
+    renderSlots();
+    if (pendingAnswer.length < seqLen()) return;
+    finishQuestion(session.recordAnswer(pendingAnswer), null);
+    return;
+  }
+
+  finishQuestion(session.recordAnswer(degree), btn);
+}
+
+function finishQuestion(correct, btn) {
   answering = false;
   setButtonsEnabled(false);
 
   const asked = session.currentDegree;
-  const noteMidi = currentNoteMidi; // includes the octave the note sounded in
-  const correct = session.recordAnswer(degree);
   bar = applyAnswer(bar, correct);
   renderBar();
   persist();
 
-  const askedName = degreeInfo(asked, mode).name;
+  const names = [].concat(asked).map((d) => degreeInfo(d, mode).name).join(' → ');
   if (correct) {
-    btn.classList.add('correct');
-    el.feedback.textContent = `Yes! That was ${askedName} 🎉`;
+    btn?.classList.add('correct');
+    el.feedback.textContent = `Yes! That was ${names} 🎉`;
     el.feedback.className = 'feedback good';
   } else {
-    btn.classList.add('wrong');
-    el.degrees.querySelector(`[data-degree="${asked}"]`)?.classList.add('correct');
-    el.feedback.textContent = `It was ${askedName} — hear it walk home`;
+    btn?.classList.add('wrong');
+    if (seqLen() === 1) {
+      el.degrees.querySelector(`[data-degree="${asked}"]`)?.classList.add('correct');
+    }
+    el.feedback.textContent = `It was ${names} — hear it walk home`;
     el.feedback.className = 'feedback bad';
   }
+  if (seqLen() > 1) renderSlots('verdict');
 
-  // Resolution: the note walks home to Do (the teaching device, ADR-0001)
+  // Resolution: the (last) note walks home to Do (the teaching device, ADR-0001)
   resolving = true;
   setReplaysEnabled(false);
   afterResolution = () => {
@@ -374,7 +436,8 @@ function answer(degree, btn) {
     if (isFull(bar)) levelCleared();
     else ask();
   };
-  const end = piano.playSequence(resolutionPath(tonic, noteMidi, mode), piano.now + 0.45);
+  const lastMidi = currentNoteMidis[currentNoteMidis.length - 1];
+  const end = piano.playSequence(resolutionPath(tonic, lastMidi, mode), piano.now + 0.45);
   const msUntilNext = (end - piano.now) * 1000 + 700;
   nextTimeout = setTimeout(() => afterResolution?.(), msUntilNext);
 }
@@ -389,6 +452,7 @@ function skipResolution() {
 
 function enterQuiz() {
   el.levelTitle.textContent = `Level ${level.id} — ${level.name}`;
+  el.backspaceBtn.hidden = seqLen() === 1;
   buildButtons();
   renderBar();
   showScreen(el.quizScreen);
@@ -464,6 +528,12 @@ el.meetSkipBtn.addEventListener('click', () => meetNext(true));
 el.theoryNextBtn.addEventListener('click', () => theoryOnDone?.());
 el.replayNoteBtn.addEventListener('click', replayNote);
 el.replayCadenceBtn.addEventListener('click', replayCadence);
+el.backspaceBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!answering || !pendingAnswer.length) return;
+  pendingAnswer.pop();
+  renderSlots();
+});
 el.quizScreen.addEventListener('click', skipResolution);
 
 document.addEventListener('keydown', (e) => {

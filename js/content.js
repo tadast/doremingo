@@ -74,4 +74,18 @@ export const THEORY = {
       'An octave is the same note repeated higher or lower — a high Mi and a low Mi are both Mi, the way two people can sing the same melody in different voices. Listen for the note’s character, not its height. If you can do this, your ear is doing what trained musicians’ ears do. 🦩',
     ],
   },
+  11: {
+    title: 'Notes make melodies 🎶',
+    paragraphs: [
+      'A melody is just notes taking steps one after another. Now you’ll hear two notes in a row and name them both, in order.',
+      'Tip: catch the first note’s feeling before the second one plays, then deal with them one at a time. Tap your answers in order — the Undo button fixes slips. This is the start of hearing whole tunes the way you read words instead of letters.',
+    ],
+  },
+  12: {
+    title: 'Tiny tunes, any key 🎵',
+    paragraphs: [
+      'Three notes, any key. These are real melody fragments now — the same little moves your favourite songs are made of.',
+      'When you can name three steps in a row wherever home happens to be, you’re genuinely hearing music from the inside. Everything bigger — riffs, solos, whole songs — is this exact skill, repeated. 🦩',
+    ],
+  },
 };

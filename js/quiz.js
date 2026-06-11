@@ -23,19 +23,34 @@ const REQUEUE_AFTER = 2; // a missed degree comes back after this many questions
  * avoids immediate repeats, and re-queues a missed degree to reappear a
  * couple of questions later (lite spaced repetition).
  */
-export function createSession(level, rng = Math.random) {
-  let lastDegree = null;
-  let currentDegree = null;
-  let questionsAsked = 0;
-  const requeue = []; // [{degree, dueIn}]
+const qKey = (q) => JSON.stringify(q);
 
-  function drawRandom() {
+export function createSession(level, rng = Math.random) {
+  const seqLen = level.sequenceLength ?? 1;
+  let lastQuestion = null;
+  let currentQuestion = null; // a degree, or an array of degrees for sequences
+  let questionsAsked = 0;
+  const requeue = []; // [{question, dueIn}]
+
+  function drawDegree(exclude) {
     const pool = level.degrees;
     let d;
     do {
       d = pool[Math.floor(rng() * pool.length)];
-    } while (pool.length > 1 && d === lastDegree);
+    } while (pool.length > 1 && d === exclude);
     return d;
+  }
+
+  function drawQuestion() {
+    if (seqLen === 1) return drawDegree(lastQuestion);
+    const seq = [];
+    let prev = null;
+    for (let i = 0; i < seqLen; i++) {
+      const d = drawDegree(prev); // no immediate repeats inside the melody
+      seq.push(d);
+      prev = d;
+    }
+    return seq;
   }
 
   return {
@@ -43,33 +58,33 @@ export function createSession(level, rng = Math.random) {
       return level;
     },
     get currentDegree() {
-      return currentDegree;
+      return currentQuestion;
     },
     /** Should the cadence play before the upcoming question? */
     cadenceDue() {
       if (level.cadenceEvery === 0) return questionsAsked === 0;
       return questionsAsked % level.cadenceEvery === 0;
     },
-    /** Pick the next question's degree. */
+    /** Pick the next question: a degree, or an array for sequence levels. */
     next() {
       for (const item of requeue) item.dueIn -= 1;
       const dueIdx = requeue.findIndex((item) => item.dueIn <= 0);
-      let degree;
-      if (dueIdx !== -1 && requeue[dueIdx].degree !== lastDegree) {
-        degree = requeue.splice(dueIdx, 1)[0].degree;
+      let question;
+      if (dueIdx !== -1 && qKey(requeue[dueIdx].question) !== qKey(lastQuestion)) {
+        question = requeue.splice(dueIdx, 1)[0].question;
       } else {
-        degree = drawRandom();
+        question = drawQuestion();
       }
       questionsAsked += 1;
-      lastDegree = degree;
-      currentDegree = degree;
-      return degree;
+      lastQuestion = question;
+      currentQuestion = question;
+      return question;
     },
-    /** Grade an answer; wrong answers re-queue the degree. */
-    recordAnswer(answeredDegree) {
-      const correct = answeredDegree === currentDegree;
-      if (!correct && !requeue.some((item) => item.degree === currentDegree)) {
-        requeue.push({ degree: currentDegree, dueIn: REQUEUE_AFTER });
+    /** Grade an answer (degree or array); wrong answers re-queue the question. */
+    recordAnswer(answered) {
+      const correct = qKey(answered) === qKey(currentQuestion);
+      if (!correct && !requeue.some((item) => qKey(item.question) === qKey(currentQuestion))) {
+        requeue.push({ question: currentQuestion, dueIn: REQUEUE_AFTER });
       }
       return correct;
     },
