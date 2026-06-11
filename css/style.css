@@ -203,6 +203,12 @@ h1 {
 .slot.bad { background: #fde3e9; box-shadow: inset 0 0 0 2px var(--red); }
 
 .kbd-hint { font-size: 0.75rem; }
+
+.footer {
+  margin-top: 24px;
+  font-size: 0.8rem;
+}
+.footer a { color: #b39bbb; }
 @media (pointer: coarse) {
   .kbd-hint { display: none; }
 }
