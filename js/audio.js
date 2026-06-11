@@ -15,14 +15,49 @@ export class Piano {
     this.ctx = null;
     this.buffers = new Map();
     this.active = new Set();
+    this.silentEl = null;
+  }
+
+  /**
+   * iOS suspends (or 'interrupt's) the context on lock/app-switch and only a
+   * fresh user gesture may resume it — so retry on every tap, forever.
+   */
+  installResumeOnGesture() {
+    const resume = () => {
+      if (this.ctx && this.ctx.state !== 'running') this.ctx.resume();
+      if (this.silentEl?.paused) this.silentEl.play().catch(() => {});
+    };
+    for (const evt of ['touchend', 'mousedown', 'keydown']) {
+      document.addEventListener(evt, resume, { passive: true });
+    }
+  }
+
+  /**
+   * iOS routes Web Audio through the "ambient" audio session, which the
+   * ring/silent switch mutes. A looping (silent) <audio> element flips the
+   * session to "playback", so the piano sounds with the switch on silent.
+   */
+  startSilentKeepalive() {
+    this.silentEl = document.createElement('audio');
+    this.silentEl.setAttribute('playsinline', '');
+    this.silentEl.src = 'assets/silence.wav';
+    this.silentEl.loop = true;
+    this.silentEl.play().catch(() => {});
   }
 
   /** Create/resume the AudioContext and load all samples. Call from a user gesture. */
   async init(onProgress = () => {}) {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.startSilentKeepalive();
+      this.installResumeOnGesture();
     }
     await this.ctx.resume();
+    // classic iOS unlock: route one silent buffer through the graph inside the gesture
+    const unlock = this.ctx.createBufferSource();
+    unlock.buffer = this.ctx.createBuffer(1, 1, 22050);
+    unlock.connect(this.ctx.destination);
+    unlock.start(0);
     const total = Object.keys(SAMPLES).length;
     if (this.buffers.size === total) return;
     let loaded = 0;
