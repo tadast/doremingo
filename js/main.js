@@ -90,15 +90,65 @@ function showScreen(screen) {
   }
 }
 
+// ---------- routing ----------
+// Hash routes so levels and the tutorial are shareable links:
+// #/  ·  #/tutorial  ·  #/level/3
+
+let currentRoute = null;
+
+function setRoute(route) {
+  currentRoute = route;
+  if (location.hash !== route) location.hash = route;
+}
+
 function goHome() {
   answering = false;
   resolving = false;
   clearTimeout(nextTimeout);
   piano.stopAll?.();
   clearHighlights();
+  setRoute('#/');
   renderHome();
   showScreen(el.homeScreen);
 }
+
+/**
+ * Open a level from a link or back/forward. If audio isn't unlocked yet
+ * (fresh page load), gate behind the theory card — its button is the
+ * user gesture that lets the piano start.
+ */
+function openLevelFromLink(id) {
+  if (piano.ctx?.state === 'running') {
+    startLevel(id);
+    return;
+  }
+  if (!state.seenTheory.includes(id) && THEORY[id]) {
+    state.seenTheory = [...state.seenTheory, id];
+    store.save(state);
+  }
+  showTheory(id, () => startLevel(id));
+}
+
+function applyRoute() {
+  const levelMatch = location.hash.match(/^#\/level\/(\d+)$/);
+  if (levelMatch && getLevel(Number(levelMatch[1]))) {
+    setRoute(location.hash);
+    openLevelFromLink(Number(levelMatch[1]));
+    return;
+  }
+  if (location.hash === '#/tutorial') {
+    setRoute('#/tutorial');
+    startTutorial();
+    return;
+  }
+  if (state.tutorialDone) goHome();
+  else startTutorial();
+}
+
+window.addEventListener('hashchange', () => {
+  if (location.hash === currentRoute) return; // our own navigation
+  applyRoute();
+});
 
 // ---------- home / level map ----------
 
@@ -272,6 +322,7 @@ async function meetNext(skipped = false) {
 }
 
 function startTutorial() {
+  setRoute('#/tutorial');
   runMeet(tutorialSteps(), (skipped) => {
     state.tutorialDone = true;
     state.metNotes = [...new Set([...state.metNotes, 1, 3, 5])];
@@ -567,6 +618,7 @@ function enterQuiz() {
 }
 
 async function startLevel(id) {
+  setRoute(`#/level/${id}`);
   el.loadStatus.hidden = false;
   el.loadStatus.textContent = 'Warming up the piano…';
   try {
@@ -667,8 +719,4 @@ window.__doremingo = {
   get meetIdx() { return meetIdx; },
 };
 
-if (state.tutorialDone) {
-  renderHome();
-} else {
-  startTutorial();
-}
+applyRoute();
