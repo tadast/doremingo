@@ -16,9 +16,18 @@
     </section>
 
     <section id="quiz-screen" class="screen" hidden>
+      <div class="bar-track" aria-label="level progress">
+        <div id="bar-fill" class="bar-fill"></div>
+      </div>
       <p id="prompt" class="prompt">Listen…</p>
       <div id="degree-buttons" class="degrees"></div>
       <p id="feedback" class="feedback"></p>
+    </section>
+
+    <section id="clear-screen" class="screen" hidden>
+      <h1>Level cleared! 🎉</h1>
+      <p class="tagline">Your ear is getting sharper. 🦩</p>
+      <button id="continue-btn" class="big-btn">Keep playing</button>
     </section>
   </main>
   <script type="module" src="js/main.js"></script>

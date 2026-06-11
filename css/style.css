@@ -51,6 +51,20 @@ h1 {
 
 .prompt { font-size: 1.3rem; min-height: 2em; }
 
+.bar-track {
+  height: 18px;
+  border-radius: 999px;
+  background: #f3e3d3;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--yellow), var(--green));
+  transition: width 0.4s ease;
+}
+
 .degrees {
   display: flex;
   flex-wrap: wrap;

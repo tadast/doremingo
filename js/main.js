@@ -1,24 +1,45 @@
-// UI glue for the core loop: cadence → note → answer → resolution → next.
+// UI glue: cadence → note → answer → resolution → next, with the Bar and
+// persisted progress.
 import { degreeToMidi, resolutionPath, cadenceChords, SOLFEGE } from './theory.js';
 import { Piano } from './audio.js';
+import { createBar, applyAnswer, isFull } from './quiz.js';
+import { Store } from './store.js';
 
 const TONIC = 60; // C4 for the core loop
 const DEGREE_POOL = [1, 3, 5]; // Level 1: Do Mi Sol
+const BAR_SIZE = 15;
+const LEVEL = 1; // until the level system lands (issue 04)
 
 const piano = new Piano();
+const store = new Store();
+let state = store.load();
+let bar = createBar(BAR_SIZE, state.bar ?? 0);
 
 const el = {
   startScreen: document.getElementById('start-screen'),
   quizScreen: document.getElementById('quiz-screen'),
+  clearScreen: document.getElementById('clear-screen'),
   startBtn: document.getElementById('start-btn'),
+  continueBtn: document.getElementById('continue-btn'),
   loadStatus: document.getElementById('load-status'),
   prompt: document.getElementById('prompt'),
   degrees: document.getElementById('degree-buttons'),
   feedback: document.getElementById('feedback'),
+  barFill: document.getElementById('bar-fill'),
 };
 
 let currentDegree = null;
 let answering = false;
+
+function showScreen(screen) {
+  for (const s of [el.startScreen, el.quizScreen, el.clearScreen]) {
+    s.hidden = s !== screen;
+  }
+}
+
+function renderBar() {
+  el.barFill.style.width = `${(bar.value / bar.size) * 100}%`;
+}
 
 function buildButtons() {
   el.degrees.replaceChildren(
@@ -76,6 +97,19 @@ function ask() {
   }, msUntilAnswerable);
 }
 
+function persist() {
+  store.save({ ...state, currentLevel: LEVEL, bar: bar.value });
+}
+
+function levelCleared() {
+  if (!state.clearedLevels.includes(LEVEL)) {
+    state.clearedLevels = [...state.clearedLevels, LEVEL];
+  }
+  bar = createBar(BAR_SIZE, 0);
+  persist();
+  showScreen(el.clearScreen);
+}
+
 function answer(degree, btn) {
   if (!answering) return;
   answering = false;
@@ -83,6 +117,9 @@ function answer(degree, btn) {
 
   const noteMidi = degreeToMidi(TONIC, currentDegree);
   const correct = degree === currentDegree;
+  bar = applyAnswer(bar, correct);
+  renderBar();
+  persist();
 
   if (correct) {
     btn.classList.add('correct');
@@ -99,7 +136,10 @@ function answer(degree, btn) {
   // Resolution: the note walks home to Do (the teaching device, ADR-0001)
   const end = piano.playSequence(resolutionPath(TONIC, noteMidi), piano.now + 0.45);
   const msUntilNext = (end - piano.now) * 1000 + 700;
-  setTimeout(ask, msUntilNext);
+  setTimeout(() => {
+    if (isFull(bar)) levelCleared();
+    else ask();
+  }, msUntilNext);
 }
 
 async function start() {
@@ -113,10 +153,22 @@ async function start() {
     console.error(err);
     return;
   }
-  el.startScreen.hidden = true;
-  el.quizScreen.hidden = false;
+  showScreen(el.quizScreen);
   buildButtons();
+  renderBar();
   ask();
 }
 
+// Test hook for browser automation — not part of the game API.
+window.__doremingo = {
+  get currentDegree() { return currentDegree; },
+  get bar() { return bar; },
+  get answering() { return answering; },
+};
+
 el.startBtn.addEventListener('click', start);
+el.continueBtn.addEventListener('click', () => {
+  renderBar();
+  showScreen(el.quizScreen);
+  ask();
+});
