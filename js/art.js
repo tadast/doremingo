@@ -6,7 +6,7 @@ export const FLAMINGO = `
   <g class="flamingo">
     <!-- the famous one-leg stance: one straight, one tucked up -->
     <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3" fill="none" stroke-linecap="round"/>
-    <path class="leg-up" d="M58 86 L57 94 L48 103" stroke="#e8438a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="leg-up" d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3" fill="none" stroke-linecap="round"/>
     <!-- body -->
     <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
     <ellipse class="wing" cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
