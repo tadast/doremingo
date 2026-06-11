@@ -1,5 +1,5 @@
 // UI glue: tutorial → level map → (cadence → note → answer → resolution)* → clear.
-import { degreeToMidi, resolutionPath, cadenceChords, SOLFEGE } from './theory.js';
+import { degreeToMidi, resolutionPath, cadenceChords, degreeInfo } from './theory.js';
 import { Piano } from './audio.js';
 import { createBar, applyAnswer, isFull, createSession } from './quiz.js';
 import { Store } from './store.js';
@@ -13,6 +13,8 @@ let state = store.load();
 let level = null;
 let session = null;
 let bar = null;
+let tonic = 60;
+let mode = 'major';
 let answering = false;
 let currentNoteMidi = null;
 let resolving = false;
@@ -135,6 +137,8 @@ const MEET_BLURBS = {
   5: 'Sol is the bright one, higher up — it loves climbing to the next Do. Tap it!',
   6: 'La is the dreamy one, floating above Sol. Tap to hear it climb home.',
   7: 'Ti lives right under the next Do — so close it can’t resist pulling up. Tap it!',
+  fi: 'Fi squeezes in between Fa and Sol — sharp, curious, a little cheeky. Tap to hear it tip up into Sol and climb home.',
+  te: 'Te is the mellow rebel — a softened Ti that sits a step lower. Tap to hear it push up through Ti to reach home.',
 };
 
 function tutorialSteps() {
@@ -166,14 +170,15 @@ let meetSteps = [];
 let meetIdx = 0;
 let meetOnDone = null;
 
-function buildStageButton(degree, withResolution, tonic = 60) {
+function buildStageButton(degree, withResolution, stageTonic = 60, stageMode = 'major') {
+  const info = degreeInfo(degree, stageMode);
   const btn = document.createElement('button');
   btn.className = 'degree-btn';
   btn.dataset.degree = String(degree);
-  btn.innerHTML = `<span>${SOLFEGE[degree]}</span><span class="num">${degree}</span>`;
+  btn.innerHTML = `<span>${info.name}</span><span class="num">${info.label}</span>`;
   btn.addEventListener('click', () => {
-    const midi = degreeToMidi(tonic, degree);
-    if (withResolution) piano.playSequence(resolutionPath(tonic, midi), piano.now + 0.05, 0.5);
+    const midi = degreeToMidi(stageTonic, degree, 0, stageMode);
+    if (withResolution) piano.playSequence(resolutionPath(stageTonic, midi, stageMode), piano.now + 0.05, 0.5);
     else piano.playNote(midi, piano.now + 0.05, 1.2, 0.95);
   });
   return btn;
@@ -185,7 +190,7 @@ function renderMeetStep() {
   el.meetBody.textContent = s.body;
   el.meetNextBtn.textContent = s.nextLabel ?? 'Next';
   el.meetStage.replaceChildren(
-    ...(s.stage ? [buildStageButton(s.stage, s.resolve, s.tonic ?? 60)] : []),
+    ...(s.stage ? [buildStageButton(s.stage, s.resolve, s.tonic ?? 60, s.mode ?? 'major')] : []),
   );
   if (s.sound === 'cadence') {
     let t = piano.now + 0.3;
@@ -240,10 +245,11 @@ function renderBar() {
 function buildButtons() {
   el.degrees.replaceChildren(
     ...level.degrees.map((d) => {
+      const info = degreeInfo(d, mode);
       const btn = document.createElement('button');
       btn.className = 'degree-btn';
       btn.dataset.degree = String(d);
-      btn.innerHTML = `<span>${SOLFEGE[d]}</span><span class="num">${d}</span>`;
+      btn.innerHTML = `<span>${info.name}</span><span class="num">${info.label}</span>`;
       btn.addEventListener('click', (e) => {
         e.stopPropagation(); // don't let the answering tap skip its own resolution
         answer(d, btn);
@@ -276,7 +282,7 @@ function replayNote() {
 function replayCadence() {
   if (resolving) return;
   let t = piano.now + 0.05;
-  for (const chord of cadenceChords(level.tonic)) {
+  for (const chord of cadenceChords(tonic, mode)) {
     t = piano.playChord(chord, t, 0.55) + 0.05;
   }
 }
@@ -290,13 +296,15 @@ function ask() {
 
   const cadence = session.cadenceDue();
   const degree = session.next();
-  const noteMidi = degreeToMidi(level.tonic, degree);
+  const octaves = level.octaves ?? [0];
+  const octave = octaves[Math.floor(Math.random() * octaves.length)];
+  const noteMidi = degreeToMidi(tonic, degree, octave, mode);
   currentNoteMidi = noteMidi;
 
   let t = piano.now + 0.1;
   if (cadence) {
     el.prompt.textContent = 'Listen… this is home 🏠';
-    for (const chord of cadenceChords(level.tonic)) {
+    for (const chord of cadenceChords(tonic, mode)) {
       t = piano.playChord(chord, t, 0.55) + 0.05;
     }
     t += 0.4;
@@ -339,20 +347,21 @@ function answer(degree, btn) {
   setButtonsEnabled(false);
 
   const asked = session.currentDegree;
-  const noteMidi = degreeToMidi(level.tonic, asked);
+  const noteMidi = currentNoteMidi; // includes the octave the note sounded in
   const correct = session.recordAnswer(degree);
   bar = applyAnswer(bar, correct);
   renderBar();
   persist();
 
+  const askedName = degreeInfo(asked, mode).name;
   if (correct) {
     btn.classList.add('correct');
-    el.feedback.textContent = `Yes! That was ${SOLFEGE[asked]} 🎉`;
+    el.feedback.textContent = `Yes! That was ${askedName} 🎉`;
     el.feedback.className = 'feedback good';
   } else {
     btn.classList.add('wrong');
     el.degrees.querySelector(`[data-degree="${asked}"]`)?.classList.add('correct');
-    el.feedback.textContent = `It was ${SOLFEGE[asked]} — hear it walk home`;
+    el.feedback.textContent = `It was ${askedName} — hear it walk home`;
     el.feedback.className = 'feedback bad';
   }
 
@@ -365,7 +374,7 @@ function answer(degree, btn) {
     if (isFull(bar)) levelCleared();
     else ask();
   };
-  const end = piano.playSequence(resolutionPath(level.tonic, noteMidi), piano.now + 0.45);
+  const end = piano.playSequence(resolutionPath(tonic, noteMidi, mode), piano.now + 0.45);
   const msUntilNext = (end - piano.now) * 1000 + 700;
   nextTimeout = setTimeout(() => afterResolution?.(), msUntilNext);
 }
@@ -406,20 +415,30 @@ async function startLevel(id) {
 
   level = getLevel(id);
   session = createSession(level);
+  mode = level.mode ?? 'major';
+  tonic = level.keyPool === 'random'
+    ? 55 + Math.floor(Math.random() * 12) // G3-F#4 — keeps wide octaves in sample range
+    : level.tonic;
   const resumeBar = state.currentLevel === id ? state.bar ?? 0 : 0;
   bar = createBar(level.barSize, resumeBar);
   state.currentLevel = id;
   persist();
 
   const maybeMeet = () => {
-    const d = level.newDegree;
-    if (d && !state.metNotes.includes(d)) {
-      state.metNotes = [...new Set([...state.metNotes, d])];
+    const unmet = (level.newDegrees ?? []).filter((d) => !state.metNotes.includes(d));
+    if (unmet.length) {
+      state.metNotes = [...new Set([...state.metNotes, ...unmet])];
       store.save(state);
-      runMeet(
-        [{ title: `Meet ${SOLFEGE[d]}`, body: MEET_BLURBS[d], stage: d, resolve: true, tonic: level.tonic, nextLabel: 'Got it — quiz me!' }],
-        () => enterQuiz(),
-      );
+      const steps = unmet.map((d, i) => ({
+        title: `Meet ${degreeInfo(d, mode).name}`,
+        body: MEET_BLURBS[d],
+        stage: d,
+        resolve: true,
+        tonic,
+        mode,
+        nextLabel: i === unmet.length - 1 ? 'Got it — quiz me!' : 'Next',
+      }));
+      runMeet(steps, () => enterQuiz());
     } else {
       enterQuiz();
     }

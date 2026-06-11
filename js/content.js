@@ -46,4 +46,32 @@ export const THEORY = {
       'In this level the home chord plays only once, at the start. Keep that feeling of Do in your mind and measure every note against it. It’s a workout — and it’s exactly the skill that makes ears great.',
     ],
   },
+  7: {
+    title: 'The notes between the steps 🎨',
+    paragraphs: [
+      'Between the seven steps of the ladder hide extra notes — the black-key colours that give music spice. Songs borrow them all the time.',
+      'You’ll meet two: Fi, squeezed between Fa and Sol — bright, curious, slightly tense — and Te, a softened Ti that gives melodies a relaxed, bluesy shade. They’re rarer than the main steps, so trust your gut: if a note sounds “in between”, it probably is.',
+    ],
+  },
+  8: {
+    title: 'The minor side 🌙',
+    paragraphs: [
+      'Keys come in two main flavours. Major feels bright and open. Minor feels moodier — not broken, just a different colour of home.',
+      'The trick: three steps of the ladder sit one notch lower. Mi becomes Me, La becomes Le, Ti becomes Te. Home is still home, and everything still wants to walk back to Do — it just walks through different shades. Listen for the same pulls you already know, wearing darker clothes.',
+    ],
+  },
+  9: {
+    title: 'Home can move 🚚',
+    paragraphs: [
+      'Here’s the big secret of how musicians hear: it doesn’t matter where home is — the distances between notes feel the same in every key. Re always feels “one step up from rest”, whatever note the key starts on.',
+      'Each run of this level, home moves to a new place. The chord pattern at the start tells your ear where it landed. Trust the feeling, not the pitch — that’s exactly the skill that lets people play songs by ear in any key.',
+    ],
+  },
+  10: {
+    title: 'The whole map 🗺️',
+    paragraphs: [
+      'Final stretch: any key, colour notes included, and notes can ring out high above or rumble low below home.',
+      'An octave is the same note repeated higher or lower — a high Mi and a low Mi are both Mi, the way two people can sing the same melody in different voices. Listen for the note’s character, not its height. If you can do this, your ear is doing what trained musicians’ ears do. 🦩',
+    ],
+  },
 };

@@ -5,6 +5,7 @@ import {
   midiToDegree,
   resolutionPath,
   cadenceChords,
+  degreeInfo,
   SOLFEGE,
 } from '../js/theory.js';
 
@@ -34,7 +35,9 @@ test('midiToDegree inverts degreeToMidi across octaves', () => {
     assert.equal(midiToDegree(C4, degreeToMidi(C4, d, 1)), d);
     assert.equal(midiToDegree(C4, degreeToMidi(C4, d, -1)), d);
   }
-  assert.equal(midiToDegree(C4, 61), null); // C# not diatonic
+  assert.equal(midiToDegree(C4, 61), 'ra'); // chromatic degrees have tokens
+  assert.equal(midiToDegree(C4, 66), 'fi');
+  assert.equal(midiToDegree(C4, 64, 'minor'), null); // no major third in minor
 });
 
 test('resolutionPath walks Mi down to Do', () => {
@@ -66,8 +69,26 @@ test('resolutionPath always ends on a Do, any degree, any octave', () => {
   }
 });
 
-test('resolutionPath rejects non-diatonic notes', () => {
-  assert.throws(() => resolutionPath(C4, 61), RangeError);
+test('resolutionPath handles chromatic degrees', () => {
+  // Fi steps onto Sol then climbs home
+  assert.deepEqual(resolutionPath(C4, 66), [66, 67, 69, 71, 72]);
+  // Te pushes up through Ti
+  assert.deepEqual(resolutionPath(C4, 70), [70, 71, 72]);
+});
+
+test('minor mode: degrees, resolution and cadence', () => {
+  const A3 = 57;
+  assert.equal(degreeToMidi(A3, 3, 0, 'minor'), 60); // Me = C in A minor
+  assert.equal(degreeInfo(3, 'minor').name, 'Me');
+  // Me walks down Me-Re-Do in minor
+  assert.deepEqual(resolutionPath(A3, 60, 'minor'), [60, 59, 57]);
+  // Te climbs home through the whole tone
+  assert.deepEqual(resolutionPath(A3, 67, 'minor'), [67, 69]);
+  const chords = cadenceChords(A3, 'minor');
+  const pcs = (chord) => new Set(chord.map((m) => ((m - A3) % 12 + 12) % 12));
+  assert.deepEqual(pcs(chords[0]), new Set([0, 3, 7])); // i
+  assert.deepEqual(pcs(chords[1]), new Set([0, 5, 8])); // iv
+  assert.deepEqual(pcs(chords[2]), new Set([7, 11, 2])); // V with leading tone
 });
 
 test('cadenceChords is I-IV-V-I with correct pitch classes', () => {

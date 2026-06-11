@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSession } from '../js/quiz.js';
 import { LEVELS, getLevel } from '../js/levels.js';
+import { degreeInfo } from '../js/theory.js';
 
 function seededRng(seed = 42) {
   let s = seed;
@@ -19,11 +20,28 @@ test('levels follow the progression shape', () => {
     const cur = getLevel(id);
     assert.equal(cur.degrees.length, prev.degrees.length + 1);
     assert.ok(prev.degrees.every((d) => cur.degrees.includes(d)));
-    assert.ok(cur.degrees.includes(cur.newDegree));
+    assert.ok(cur.newDegrees.every((d) => cur.degrees.includes(d)));
   }
   assert.deepEqual(getLevel(5).degrees, [1, 2, 3, 4, 5, 6, 7]);
   assert.equal(getLevel(6).cadenceEvery, 0);
   assert.equal(getLevel(99), null);
+});
+
+test('advanced levels: chromatic, minor, random keys, wide octaves', () => {
+  assert.ok(getLevel(7).degrees.includes('fi') && getLevel(7).degrees.includes('te'));
+  assert.deepEqual(getLevel(7).newDegrees, ['fi', 'te']);
+  assert.equal(getLevel(8).mode, 'minor');
+  assert.equal(getLevel(9).keyPool, 'random');
+  assert.equal(getLevel(10).keyPool, 'random');
+  assert.deepEqual(getLevel(10).octaves, [-1, 0, 1]);
+});
+
+test('session draws chromatic tokens from a chromatic pool', () => {
+  const session = createSession(getLevel(7), seededRng(11));
+  const seen = new Set();
+  for (let i = 0; i < 300; i++) seen.add(session.next());
+  assert.ok(seen.has('fi'));
+  assert.ok(seen.has('te'));
 });
 
 test('session draws only from the level degree pool', () => {
@@ -71,9 +89,12 @@ test('cadence policy: every question vs once per run', () => {
   assert.equal(once.cadenceDue(), false);
 });
 
-test('all levels stay diatonic and within degree range', () => {
+test('every level degree is a valid key in its mode', () => {
   for (const level of LEVELS) {
-    assert.ok(level.degrees.every((d) => d >= 1 && d <= 7));
+    const mode = level.mode ?? 'major';
+    for (const d of level.degrees) {
+      assert.ok(degreeInfo(d, mode), `level ${level.id} degree ${d}`);
+    }
     assert.ok(level.barSize > 0);
   }
 });
