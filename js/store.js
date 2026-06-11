@@ -9,6 +9,8 @@ export function defaultState() {
     clearedLevels: [],
     currentLevel: 1,
     bar: null, // in-progress bar value for currentLevel, or null
+    tutorialDone: false,
+    metNotes: [], // degrees already introduced via Meet-the-Note
   };
 }
 

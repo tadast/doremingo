@@ -1,4 +1,4 @@
-// UI glue: level map → (cadence → note → answer → resolution)* → clear.
+// UI glue: tutorial → level map → (cadence → note → answer → resolution)* → clear.
 import { degreeToMidi, resolutionPath, cadenceChords, SOLFEGE } from './theory.js';
 import { Piano } from './audio.js';
 import { createBar, applyAnswer, isFull, createSession } from './quiz.js';
@@ -18,8 +18,10 @@ const el = {
   homeScreen: document.getElementById('home-screen'),
   quizScreen: document.getElementById('quiz-screen'),
   clearScreen: document.getElementById('clear-screen'),
+  meetScreen: document.getElementById('meet-screen'),
   journey: document.getElementById('journey'),
   levelList: document.getElementById('level-list'),
+  tutorialBtn: document.getElementById('tutorial-btn'),
   loadStatus: document.getElementById('load-status'),
   homeBtn: document.getElementById('home-btn'),
   levelTitle: document.getElementById('level-title'),
@@ -30,12 +32,23 @@ const el = {
   clearMessage: document.getElementById('clear-message'),
   nextLevelBtn: document.getElementById('next-level-btn'),
   mapBtn: document.getElementById('map-btn'),
+  meetTitle: document.getElementById('meet-title'),
+  meetBody: document.getElementById('meet-body'),
+  meetStage: document.getElementById('meet-stage'),
+  meetNextBtn: document.getElementById('meet-next-btn'),
+  meetSkipBtn: document.getElementById('meet-skip-btn'),
 };
 
 function showScreen(screen) {
-  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen]) {
+  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen]) {
     s.hidden = s !== screen;
   }
+}
+
+function goHome() {
+  answering = false;
+  renderHome();
+  showScreen(el.homeScreen);
 }
 
 // ---------- home / level map ----------
@@ -62,6 +75,112 @@ function renderHome() {
       return card;
     }),
   );
+}
+
+// ---------- meet / tutorial ----------
+
+const MEET_BLURBS = {
+  1: 'Do is home itself — the most restful note of all. Tap it to hear it.',
+  2: 'Re sits one step above home, always ready to slide back down. Tap to hear it walk home.',
+  3: 'Mi floats a little above home — sunny and settled. Tap to hear it lean back down to Do.',
+  4: 'Fa is the gentle leaner — it loves drifting down toward Mi. Tap to hear it find its way home.',
+  5: 'Sol is the bright one, higher up — it loves climbing to the next Do. Tap it!',
+  6: 'La is the dreamy one, floating above Sol. Tap to hear it climb home.',
+  7: 'Ti lives right under the next Do — so close it can’t resist pulling up. Tap it!',
+};
+
+function tutorialSteps() {
+  return [
+    {
+      title: 'Welcome to DoReMingo! 🦩',
+      body: 'You’ll learn to recognise notes by how they feel inside music. No experience needed — just your ears.',
+      nextLabel: 'Let’s go',
+      initAudio: true,
+    },
+    {
+      title: 'This is home 🏠',
+      body: 'Every piece of music has a key — a home base. This little chord pattern is how DoReMingo shows your ear where home is. It plays before each question.',
+      sound: 'cadence',
+      nextLabel: 'I heard it!',
+    },
+    { title: 'Meet Do', body: MEET_BLURBS[1], stage: 1 },
+    { title: 'Meet Mi', body: MEET_BLURBS[3], stage: 3, resolve: true },
+    { title: 'Meet Sol', body: MEET_BLURBS[5], stage: 5, resolve: true },
+    {
+      title: 'Ready to play! 🎉',
+      body: 'You’ll hear home, then one mystery note. Tap which note you think it was. Wrong guesses are great too — every note walks home afterwards, so your ear learns either way.',
+      nextLabel: 'Start Level 1',
+    },
+  ];
+}
+
+let meetSteps = [];
+let meetIdx = 0;
+let meetOnDone = null;
+
+function buildStageButton(degree, withResolution, tonic = 60) {
+  const btn = document.createElement('button');
+  btn.className = 'degree-btn';
+  btn.dataset.degree = String(degree);
+  btn.innerHTML = `<span>${SOLFEGE[degree]}</span><span class="num">${degree}</span>`;
+  btn.addEventListener('click', () => {
+    const midi = degreeToMidi(tonic, degree);
+    if (withResolution) piano.playSequence(resolutionPath(tonic, midi), piano.now + 0.05, 0.5);
+    else piano.playNote(midi, piano.now + 0.05, 1.2, 0.95);
+  });
+  return btn;
+}
+
+function renderMeetStep() {
+  const s = meetSteps[meetIdx];
+  el.meetTitle.textContent = s.title;
+  el.meetBody.textContent = s.body;
+  el.meetNextBtn.textContent = s.nextLabel ?? 'Next';
+  el.meetStage.replaceChildren(
+    ...(s.stage ? [buildStageButton(s.stage, s.resolve, s.tonic ?? 60)] : []),
+  );
+  if (s.sound === 'cadence') {
+    let t = piano.now + 0.3;
+    for (const chord of cadenceChords(s.tonic ?? 60)) {
+      t = piano.playChord(chord, t, 0.55) + 0.05;
+    }
+  }
+}
+
+function runMeet(steps, onDone) {
+  meetSteps = steps;
+  meetIdx = 0;
+  meetOnDone = onDone;
+  renderMeetStep();
+  showScreen(el.meetScreen);
+}
+
+async function meetNext(skipped = false) {
+  const s = meetSteps[meetIdx];
+  if (s.initAudio && !skipped) {
+    el.meetNextBtn.disabled = true;
+    try {
+      await piano.init();
+    } finally {
+      el.meetNextBtn.disabled = false;
+    }
+  }
+  if (skipped || meetIdx + 1 >= meetSteps.length) {
+    meetOnDone(skipped);
+  } else {
+    meetIdx += 1;
+    renderMeetStep();
+  }
+}
+
+function startTutorial() {
+  runMeet(tutorialSteps(), (skipped) => {
+    state.tutorialDone = true;
+    state.metNotes = [...new Set([...state.metNotes, 1, 3, 5])];
+    store.save(state);
+    if (skipped) goHome();
+    else startLevel(1);
+  });
 }
 
 // ---------- quiz ----------
@@ -174,6 +293,14 @@ function answer(degree, btn) {
   }, msUntilNext);
 }
 
+function enterQuiz() {
+  el.levelTitle.textContent = `Level ${level.id} — ${level.name}`;
+  buildButtons();
+  renderBar();
+  showScreen(el.quizScreen);
+  ask();
+}
+
 async function startLevel(id) {
   el.loadStatus.hidden = false;
   try {
@@ -192,25 +319,27 @@ async function startLevel(id) {
   state.currentLevel = id;
   persist();
 
-  el.levelTitle.textContent = `Level ${level.id} — ${level.name}`;
-  buildButtons();
-  renderBar();
-  showScreen(el.quizScreen);
-  ask();
+  const d = level.newDegree;
+  if (d && !state.metNotes.includes(d)) {
+    state.metNotes = [...new Set([...state.metNotes, d])];
+    store.save(state);
+    runMeet(
+      [{ title: `Meet ${SOLFEGE[d]}`, body: MEET_BLURBS[d], stage: d, resolve: true, tonic: level.tonic, nextLabel: 'Got it — quiz me!' }],
+      () => enterQuiz(),
+    );
+  } else {
+    enterQuiz();
+  }
 }
 
 // ---------- wiring ----------
 
-el.homeBtn.addEventListener('click', () => {
-  answering = false;
-  renderHome();
-  showScreen(el.homeScreen);
-});
+el.homeBtn.addEventListener('click', goHome);
 el.nextLevelBtn.addEventListener('click', () => startLevel(level.id + 1));
-el.mapBtn.addEventListener('click', () => {
-  renderHome();
-  showScreen(el.homeScreen);
-});
+el.mapBtn.addEventListener('click', goHome);
+el.tutorialBtn.addEventListener('click', startTutorial);
+el.meetNextBtn.addEventListener('click', () => meetNext(false));
+el.meetSkipBtn.addEventListener('click', () => meetNext(true));
 
 // Test hook for browser automation — not part of the game API.
 window.__doremingo = {
@@ -218,6 +347,11 @@ window.__doremingo = {
   get bar() { return bar; },
   get answering() { return answering; },
   get level() { return level; },
+  get meetIdx() { return meetIdx; },
 };
 
-renderHome();
+if (state.tutorialDone) {
+  renderHome();
+} else {
+  startTutorial();
+}
