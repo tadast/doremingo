@@ -76,6 +76,19 @@ h1 {
   box-shadow: 0 2px 0 #e8d5c4;
 }
 .level-card:active { transform: translateY(1px); }
+.level-card .level-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
 .level-card .badge {
   font-size: 1.5rem;
   width: 44px;
@@ -90,6 +103,24 @@ h1 {
 .level-card.current { outline: 3px solid var(--pink); }
 .level-card .level-name { font-weight: 700; }
 .level-card .level-sub { font-size: 0.85rem; color: #8a7a8f; }
+
+.theory-body {
+  text-align: left;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+
+.level-card .book-btn {
+  margin-left: auto;
+  border: none;
+  background: var(--bg);
+  border-radius: 10px;
+  font-size: 1.1rem;
+  padding: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
 
 .quiz-header {
   display: flex;

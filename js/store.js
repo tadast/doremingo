@@ -11,6 +11,7 @@ export function defaultState() {
     bar: null, // in-progress bar value for currentLevel, or null
     tutorialDone: false,
     metNotes: [], // degrees already introduced via Meet-the-Note
+    seenTheory: [], // level ids whose explainer auto-showed already
   };
 }
 

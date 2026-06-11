@@ -4,6 +4,7 @@ import { Piano } from './audio.js';
 import { createBar, applyAnswer, isFull, createSession } from './quiz.js';
 import { Store } from './store.js';
 import { LEVELS, getLevel } from './levels.js';
+import { THEORY } from './content.js';
 
 const piano = new Piano();
 const store = new Store();
@@ -37,10 +38,14 @@ const el = {
   meetStage: document.getElementById('meet-stage'),
   meetNextBtn: document.getElementById('meet-next-btn'),
   meetSkipBtn: document.getElementById('meet-skip-btn'),
+  theoryScreen: document.getElementById('theory-screen'),
+  theoryTitle: document.getElementById('theory-title'),
+  theoryBody: document.getElementById('theory-body'),
+  theoryNextBtn: document.getElementById('theory-next-btn'),
 };
 
 function showScreen(screen) {
-  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen]) {
+  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen, el.theoryScreen]) {
     s.hidden = s !== screen;
   }
 }
@@ -61,20 +66,54 @@ function renderHome() {
 
   el.levelList.replaceChildren(
     ...LEVELS.map((l) => {
-      const card = document.createElement('button');
       const isCleared = state.clearedLevels.includes(l.id);
       const isCurrent = state.currentLevel === l.id && !isCleared;
+      const card = document.createElement('div');
       card.className = `level-card${isCleared ? ' cleared' : ''}${isCurrent ? ' current' : ''}`;
-      card.innerHTML = `
+
+      const main = document.createElement('button');
+      main.className = 'level-main';
+      main.innerHTML = `
         <span class="badge">${isCleared ? '⭐' : l.id}</span>
         <span>
           <span class="level-name">${l.name}</span><br>
           <span class="level-sub">${l.subtitle}</span>
         </span>`;
-      card.addEventListener('click', () => startLevel(l.id));
+      main.addEventListener('click', () => startLevel(l.id));
+
+      const book = document.createElement('button');
+      book.className = 'book-btn';
+      book.textContent = '📖';
+      book.title = 'Read the theory';
+      book.setAttribute('aria-label', `theory for ${l.name}`);
+      book.addEventListener('click', () => showTheory(l.id, goHome));
+
+      card.append(main, book);
       return card;
     }),
   );
+}
+
+// ---------- theory explainers ----------
+
+let theoryOnDone = null;
+
+function showTheory(levelId, onDone) {
+  const entry = THEORY[levelId];
+  if (!entry) {
+    onDone();
+    return;
+  }
+  el.theoryTitle.textContent = entry.title;
+  el.theoryBody.replaceChildren(
+    ...entry.paragraphs.map((p) => {
+      const para = document.createElement('p');
+      para.textContent = p;
+      return para;
+    }),
+  );
+  theoryOnDone = onDone;
+  showScreen(el.theoryScreen);
 }
 
 // ---------- meet / tutorial ----------
@@ -319,16 +358,26 @@ async function startLevel(id) {
   state.currentLevel = id;
   persist();
 
-  const d = level.newDegree;
-  if (d && !state.metNotes.includes(d)) {
-    state.metNotes = [...new Set([...state.metNotes, d])];
+  const maybeMeet = () => {
+    const d = level.newDegree;
+    if (d && !state.metNotes.includes(d)) {
+      state.metNotes = [...new Set([...state.metNotes, d])];
+      store.save(state);
+      runMeet(
+        [{ title: `Meet ${SOLFEGE[d]}`, body: MEET_BLURBS[d], stage: d, resolve: true, tonic: level.tonic, nextLabel: 'Got it — quiz me!' }],
+        () => enterQuiz(),
+      );
+    } else {
+      enterQuiz();
+    }
+  };
+
+  if (!state.seenTheory.includes(id) && THEORY[id]) {
+    state.seenTheory = [...state.seenTheory, id];
     store.save(state);
-    runMeet(
-      [{ title: `Meet ${SOLFEGE[d]}`, body: MEET_BLURBS[d], stage: d, resolve: true, tonic: level.tonic, nextLabel: 'Got it — quiz me!' }],
-      () => enterQuiz(),
-    );
+    showTheory(id, maybeMeet);
   } else {
-    enterQuiz();
+    maybeMeet();
   }
 }
 
@@ -340,6 +389,7 @@ el.mapBtn.addEventListener('click', goHome);
 el.tutorialBtn.addEventListener('click', startTutorial);
 el.meetNextBtn.addEventListener('click', () => meetNext(false));
 el.meetSkipBtn.addEventListener('click', () => meetNext(true));
+el.theoryNextBtn.addEventListener('click', () => theoryOnDone?.());
 
 // Test hook for browser automation — not part of the game API.
 window.__doremingo = {
