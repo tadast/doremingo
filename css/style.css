@@ -146,6 +146,21 @@ h1 {
 
 .book-btn { min-width: 44px; min-height: 44px; }
 
+.walk {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  min-height: 1.5em;
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: #c4b2c9;
+}
+.walk-note { transition: transform 0.15s, color 0.15s; }
+.walk-note.lit { color: var(--pink); transform: scale(1.3); }
+@media (prefers-reduced-motion: reduce) {
+  .walk-note.lit { transform: none; }
+}
+
 .replays {
   display: flex;
   gap: 10px;

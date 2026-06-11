@@ -45,6 +45,7 @@ const el = {
   replayCadenceBtn: document.getElementById('replay-cadence-btn'),
   backspaceBtn: document.getElementById('backspace-btn'),
   slots: document.getElementById('answer-slots'),
+  walk: document.getElementById('walk'),
   nextLevelBtn: document.getElementById('next-level-btn'),
   mapBtn: document.getElementById('map-btn'),
   meetTitle: document.getElementById('meet-title'),
@@ -305,21 +306,35 @@ function clearHighlights() {
   for (const id of highlightTimeouts) clearTimeout(id);
   highlightTimeouts = [];
   for (const b of el.degrees.querySelectorAll('.playing')) b.classList.remove('playing');
+  el.walk.replaceChildren();
 }
 
 /**
- * Light up each degree button while its note sounds, matching a
- * playSequence(midis, startDelay, noteDuration, gap) schedule.
+ * Show the resolution walk as a row of note names, lighting each name (and
+ * its degree button, when the level shows one) while that note sounds.
+ * Matches a playSequence(midis, startDelay, noteDuration, gap) schedule.
  */
 function scheduleHighlights(midis, startDelaySec, noteDuration = 0.45, gap = 0.05) {
   const stepMs = (noteDuration + gap) * 1000;
+  const spans = midis.map((midi) => {
+    const key = midiToDegree(tonic, midi, mode);
+    const span = document.createElement('span');
+    span.className = 'walk-note';
+    span.textContent = key === null ? '·' : degreeInfo(key, mode).name;
+    return span;
+  });
+  el.walk.replaceChildren(...spans);
+
   midis.forEach((midi, i) => {
     const key = midiToDegree(tonic, midi, mode);
     const btn = key === null ? null : el.degrees.querySelector(`[data-degree="${key}"]`);
-    if (!btn) return; // early levels don't show every degree the walk passes
     highlightTimeouts.push(setTimeout(() => {
-      btn.classList.add('playing');
-      highlightTimeouts.push(setTimeout(() => btn.classList.remove('playing'), noteDuration * 1000));
+      spans[i].classList.add('lit');
+      btn?.classList.add('playing');
+      highlightTimeouts.push(setTimeout(() => {
+        spans[i].classList.remove('lit');
+        btn?.classList.remove('playing');
+      }, noteDuration * 1000));
     }, startDelaySec * 1000 + i * stepMs));
   });
 }
@@ -381,6 +396,7 @@ function renderSlots(verdict = null) {
 
 function ask() {
   clearMarks();
+  clearHighlights();
   setButtonsEnabled(false);
   setReplaysEnabled(false);
   el.feedback.textContent = '';

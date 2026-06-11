@@ -4,26 +4,26 @@
 export const FLAMINGO = `
 <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <g class="flamingo">
-    <!-- legs -->
-    <path d="M46 88 L46 108 M46 108 L40 114" stroke="#e8438a" stroke-width="3" fill="none" stroke-linecap="round"/>
-    <path class="leg-up" d="M56 88 L56 98 L62 102" stroke="#e8438a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- the famous one-leg stance: one straight, one tucked up -->
+    <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="leg-up" d="M58 86 L59 95 L67 91" stroke="#e8438a" stroke-width="3" fill="none" stroke-linecap="round"/>
     <!-- body -->
-    <ellipse cx="50" cy="70" rx="27" ry="21" fill="#ff5d8f"/>
-    <ellipse class="wing" cx="42" cy="72" rx="14" ry="10" fill="#ff87ad"/>
+    <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+    <ellipse class="wing" cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
     <!-- tail fluff -->
-    <path d="M25 64 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
-    <!-- neck -->
-    <path d="M70 60 C88 50 84 28 70 20" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+    <!-- neck: gentle S, kept clear of the beak -->
+    <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
     <!-- head -->
-    <circle cx="68" cy="18" r="10" fill="#ff5d8f"/>
-    <!-- beak -->
-    <path d="M76 22 q10 2 12 8 q-8 4 -14 -2 z" fill="#3b2d3f"/>
-    <path d="M76 22 q10 2 12 8 l-6 1 q-4 -5 -6 -9 z" fill="#ffd166"/>
+    <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+    <!-- beak: out from the face, with the droopy dark tip -->
+    <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+    <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
     <!-- eye -->
-    <circle class="eye" cx="66" cy="16" r="3" fill="#3b2d3f"/>
-    <circle cx="67" cy="15" r="1" fill="#fff"/>
+    <circle class="eye" cx="66" cy="17" r="2.8" fill="#3b2d3f"/>
+    <circle cx="67" cy="16" r="1" fill="#fff"/>
     <!-- blush -->
-    <circle cx="60" cy="22" r="3" fill="#ff87ad"/>
+    <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
   </g>
 </svg>`;
 
