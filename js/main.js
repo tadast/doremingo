@@ -1,5 +1,5 @@
 // UI glue: tutorial → level map → (cadence → note → answer → resolution)* → clear.
-import { degreeToMidi, resolutionPath, cadenceChords, degreeInfo } from './theory.js';
+import { degreeToMidi, midiToDegree, resolutionPath, cadenceChords, degreeInfo } from './theory.js';
 import { Piano } from './audio.js';
 import { createBar, applyAnswer, isFull, createSession } from './quiz.js';
 import { Store } from './store.js';
@@ -23,6 +23,7 @@ let resolving = false;
 let nextTimeout = null;
 let afterResolution = null;
 let streak = 0;
+let highlightTimeouts = [];
 
 const el = {
   homeScreen: document.getElementById('home-screen'),
@@ -92,6 +93,7 @@ function goHome() {
   resolving = false;
   clearTimeout(nextTimeout);
   piano.stopAll?.();
+  clearHighlights();
   renderHome();
   showScreen(el.homeScreen);
 }
@@ -295,8 +297,31 @@ function setButtonsEnabled(enabled) {
 
 function clearMarks() {
   for (const b of el.degrees.querySelectorAll('button')) {
-    b.classList.remove('correct', 'wrong');
+    b.classList.remove('correct', 'wrong', 'playing');
   }
+}
+
+function clearHighlights() {
+  for (const id of highlightTimeouts) clearTimeout(id);
+  highlightTimeouts = [];
+  for (const b of el.degrees.querySelectorAll('.playing')) b.classList.remove('playing');
+}
+
+/**
+ * Light up each degree button while its note sounds, matching a
+ * playSequence(midis, startDelay, noteDuration, gap) schedule.
+ */
+function scheduleHighlights(midis, startDelaySec, noteDuration = 0.45, gap = 0.05) {
+  const stepMs = (noteDuration + gap) * 1000;
+  midis.forEach((midi, i) => {
+    const key = midiToDegree(tonic, midi, mode);
+    const btn = key === null ? null : el.degrees.querySelector(`[data-degree="${key}"]`);
+    if (!btn) return; // early levels don't show every degree the walk passes
+    highlightTimeouts.push(setTimeout(() => {
+      btn.classList.add('playing');
+      highlightTimeouts.push(setTimeout(() => btn.classList.remove('playing'), noteDuration * 1000));
+    }, startDelaySec * 1000 + i * stepMs));
+  });
 }
 
 function setReplaysEnabled(enabled) {
@@ -477,7 +502,9 @@ function finishQuestion(correct, btn) {
     else ask();
   };
   const lastMidi = currentNoteMidis[currentNoteMidis.length - 1];
-  const end = piano.playSequence(resolutionPath(tonic, lastMidi, mode), piano.now + 0.45);
+  const path = resolutionPath(tonic, lastMidi, mode);
+  const end = piano.playSequence(path, piano.now + 0.45);
+  scheduleHighlights(path, 0.45);
   const msUntilNext = (end - piano.now) * 1000 + 700;
   nextTimeout = setTimeout(() => afterResolution?.(), msUntilNext);
 }
@@ -487,6 +514,7 @@ function skipResolution() {
   if (!resolving) return;
   clearTimeout(nextTimeout);
   piano.stopAll();
+  clearHighlights();
   afterResolution?.();
 }
 
