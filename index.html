@@ -3,8 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>DoReMingo — learn to hear notes</title>
+  <title>DoReMingo — ear training game: learn to recognise notes by ear</title>
+  <meta name="description" content="A free, cheerful browser game that teaches you to recognise musical notes by ear. Based on functional ear training (Kodály movable-do) — no musical education needed, works on phones.">
+  <link rel="canonical" href="https://www.codeme.lt/doremingo/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DoReMingo — learn to hear notes 🦩">
+  <meta property="og:description" content="A free ear-training game grounded in real music pedagogy. Hear a note, feel where it lives. Twelve levels from your first Do to melodies in any key.">
+  <meta property="og:url" content="https://www.codeme.lt/doremingo/">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦩</text></svg>">
   <link rel="stylesheet" href="css/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "DoReMingo",
+    "url": "https://www.codeme.lt/doremingo/",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Any (web browser)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "description": "A free browser game that trains your ear to recognise musical notes, based on functional ear training (Kodály movable-do solfège).",
+    "genre": "Educational, Music"
+  }
+  </script>
 </head>
 <body>
   <main id="app">
@@ -16,6 +37,19 @@
       <div id="level-list" class="level-list"></div>
       <button id="tutorial-btn" class="big-btn secondary">How it works 🎓</button>
       <p id="load-status" class="status" hidden>Warming up the piano…</p>
+
+      <article class="about">
+        <h2>What is DoReMingo?</h2>
+        <p>DoReMingo is a free ear-training game that teaches you to recognise musical notes by ear — the skill behind playing songs without sheet music, improvising, and singing in tune. No musical education needed: the game explains everything as you go, and it works right in your browser, on your phone or computer.</p>
+
+        <h2>How does it work?</h2>
+        <p>Each round, a short chord pattern shows your ear where <em>home</em> is — the key. Then one mystery note plays, and you say which note it was: Do, Re, Mi and friends. After every answer, the note audibly walks back home step by step, so your ear learns the note's character whether you guessed right or not. Levels start with just three notes and grow gently to every note, minor keys, changing keys and short melodies.</p>
+
+        <h2>The philosophy</h2>
+        <p>DoReMingo is built on <strong>functional ear training</strong> — the Kodály movable-do tradition used in real music education. Instead of memorising pitch names (near-impossible for adults) or drilling abstract intervals, you learn how each note <em>feels</em> relative to the key: Re leans down, Ti pulls up, Do rests. That relative skill transfers directly to real music in any key — exactly how experienced musicians hear.</p>
+        <p>And because practice only works if you come back: no lives, no fail states, no punishments. Wrong answers teach you the same way right ones do. Just a happy flamingo, bright colours, and your ear getting sharper one note at a time.</p>
+      </article>
+
       <p class="footer"><a href="https://github.com/tadast/doremingo">source code</a></p>
     </section>
 
@@ -32,6 +66,7 @@
       <p id="meet-walk" class="walk" aria-label="resolution walk"></p>
       <button id="meet-next-btn" class="big-btn">Next</button>
       <button id="meet-skip-btn" class="big-btn secondary">Skip</button>
+      <p id="meet-help" class="meet-help" hidden></p>
     </section>
 
     <section id="quiz-screen" class="screen" hidden>

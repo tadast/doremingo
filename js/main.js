@@ -54,6 +54,7 @@ const el = {
   meetStage: document.getElementById('meet-stage'),
   meetNextBtn: document.getElementById('meet-next-btn'),
   meetSkipBtn: document.getElementById('meet-skip-btn'),
+  meetHelp: document.getElementById('meet-help'),
   theoryScreen: document.getElementById('theory-screen'),
   theoryTitle: document.getElementById('theory-title'),
   theoryBody: document.getElementById('theory-body'),
@@ -237,6 +238,7 @@ function tutorialSteps() {
       body: 'Every piece of music has a key — a home base. This little chord pattern is how DoReMingo shows your ear where home is. It plays before each question.',
       sound: 'cadence',
       nextLabel: 'I heard it!',
+      helpHtml: 'Don’t hear anything? Check your volume and the silent switch — still nothing? <a href="https://github.com/tadast/doremingo/issues/new?template=no-sound.yml" target="_blank" rel="noopener">Tell us what happened</a> so we can fix it.',
     },
     { title: 'Meet Do', body: MEET_BLURBS[1], stage: 1 },
     { title: 'Meet Mi', body: MEET_BLURBS[3], stage: 3, resolve: true },
@@ -287,6 +289,8 @@ function renderMeetStep() {
     ...(s.stage ? [buildStageButton(s.stage, s.resolve, s.tonic ?? 60, s.mode ?? 'major')] : []),
   );
   el.meetWalk.replaceChildren();
+  el.meetHelp.hidden = !s.helpHtml;
+  el.meetHelp.innerHTML = s.helpHtml ?? '';
   if (s.sound === 'cadence') {
     let t = piano.now + 0.3;
     for (const chord of cadenceChords(s.tonic ?? 60)) {

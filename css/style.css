@@ -204,11 +204,33 @@ h1 {
 
 .kbd-hint { font-size: 0.75rem; }
 
+.about {
+  text-align: left;
+  margin-top: 40px;
+  padding-top: 8px;
+  border-top: 2px dashed #f3dccb;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #5d4c62;
+}
+.about h2 {
+  font-size: 1.05rem;
+  color: var(--ink);
+  margin: 20px 0 6px;
+}
+.about p { margin: 0 0 10px; }
+
 .footer {
   margin-top: 24px;
   font-size: 0.8rem;
 }
 .footer a { color: #b39bbb; }
+
+.meet-help {
+  margin-top: 14px;
+  font-size: 0.85rem;
+}
+.meet-help a { color: #b39bbb; }
 @media (pointer: coarse) {
   .kbd-hint { display: none; }
 }
