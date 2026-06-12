@@ -16,7 +16,10 @@ export function isFull(bar) {
   return bar.value >= bar.size;
 }
 
-const REQUEUE_AFTER = 2; // a missed degree comes back after this many questions
+// A missed question comes back after 2-4 questions — soon enough to learn
+// from, randomised enough that you can't predict it.
+const REQUEUE_MIN = 2;
+const REQUEUE_MAX = 4;
 
 /**
  * A run of Questions for one level. Draws degrees from the level's pool,
@@ -84,7 +87,8 @@ export function createSession(level, rng = Math.random) {
     recordAnswer(answered) {
       const correct = qKey(answered) === qKey(currentQuestion);
       if (!correct && !requeue.some((item) => qKey(item.question) === qKey(currentQuestion))) {
-        requeue.push({ question: currentQuestion, dueIn: REQUEUE_AFTER });
+        const dueIn = REQUEUE_MIN + Math.floor(rng() * (REQUEUE_MAX - REQUEUE_MIN + 1));
+        requeue.push({ question: currentQuestion, dueIn });
       }
       return correct;
     },

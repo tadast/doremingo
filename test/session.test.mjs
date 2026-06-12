@@ -61,12 +61,18 @@ test('session avoids asking the same degree twice in a row', () => {
   }
 });
 
-test('missed degree reappears within the next 3 questions', () => {
-  const session = createSession(getLevel(5), seededRng(7));
-  const missed = session.next();
-  session.recordAnswer(missed === 7 ? 1 : 7); // deliberately wrong
-  const upcoming = [session.next(), session.next(), session.next()];
-  assert.ok(upcoming.includes(missed), `${missed} not in ${upcoming}`);
+test('missed degree reappears within the next 4 questions, timing varies', () => {
+  const gaps = new Set();
+  for (let seed = 1; seed <= 30; seed++) {
+    const session = createSession(getLevel(5), seededRng(seed));
+    const missed = session.next();
+    session.recordAnswer(missed === 7 ? 1 : 7); // deliberately wrong
+    const upcoming = [session.next(), session.next(), session.next(), session.next()];
+    const at = upcoming.indexOf(missed);
+    assert.notEqual(at, -1, `seed ${seed}: ${missed} not in ${upcoming}`);
+    gaps.add(at);
+  }
+  assert.ok(gaps.size > 1, `re-queue gap never varied: always ${[...gaps]}`);
 });
 
 test('correct answers do not trigger re-queue clustering', () => {
@@ -111,7 +117,7 @@ test('sequence grading is all-or-nothing and re-queues misses', () => {
   wrong[1] = wrong[1] === 1 ? 2 : 1;
   if (String(wrong) === String(q2)) wrong[1] = 3;
   assert.equal(session.recordAnswer(wrong), false);
-  const upcoming = [session.next(), session.next(), session.next()].map(String);
+  const upcoming = [session.next(), session.next(), session.next(), session.next()].map(String);
   assert.ok(upcoming.includes(String(q2)), `${q2} not in ${upcoming}`);
 });
 
