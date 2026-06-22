@@ -9,6 +9,28 @@ const SAMPLES = {
   84: 'C6',
 };
 
+/**
+ * Load a binary asset as an ArrayBuffer via XHR.
+ * `fetch()` of local files breaks under Capacitor's iOS scheme handler —
+ * it returns a media-streamed response with `status: 0` and no readable body.
+ * XHR with responseType 'arraybuffer' goes through a path that returns the
+ * full bytes (status 200 on the web, 0 for the local scheme — both fine).
+ */
+function fetchArrayBuffer(url) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = () => {
+      const ok = (xhr.status >= 200 && xhr.status < 300) || xhr.status === 0;
+      if (ok && xhr.response) resolve(xhr.response);
+      else reject(new Error(`sample load failed: ${url} status=${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error(`sample load error: ${url}`));
+    xhr.send();
+  });
+}
+
 export class Piano {
   constructor(baseUrl = 'assets/samples') {
     this.baseUrl = baseUrl;
@@ -68,9 +90,8 @@ export class Piano {
           onProgress(loaded, total);
           return;
         }
-        const res = await fetch(`${this.baseUrl}/${name}.mp3`);
-        if (!res.ok) throw new Error(`sample fetch failed: ${name}`);
-        const buf = await this.ctx.decodeAudioData(await res.arrayBuffer());
+        const bytes = await fetchArrayBuffer(`${this.baseUrl}/${name}.mp3`);
+        const buf = await this.ctx.decodeAudioData(bytes);
         this.buffers.set(Number(midi), buf);
         loaded += 1;
         onProgress(loaded, total);

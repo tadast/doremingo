@@ -39,4 +39,12 @@ export class Store {
       // storage unavailable (private mode etc.) — game still playable
     }
   }
+
+  clear() {
+    try {
+      this.storage.removeItem(KEY);
+    } catch {
+      // storage unavailable — nothing to clear
+    }
+  }
 }

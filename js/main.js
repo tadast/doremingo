@@ -1,11 +1,17 @@
 // UI glue: tutorial → level map → (cadence → note → answer → resolution)* → clear.
-import { degreeToMidi, midiToDegree, resolutionPath, cadenceChords, degreeInfo } from './theory.js';
+// The Question lifecycle itself lives in the Round module; main wires it to
+// the DOM (view adapter), the Piano (audio), and setTimeout (clock).
+import { degreeToMidi, resolutionPath, cadenceChords, degreeInfo } from './theory.js';
 import { Piano } from './audio.js';
-import { createBar, applyAnswer, isFull, createSession } from './quiz.js';
+import { createBar, createSession } from './quiz.js';
+import { Round } from './round.js';
+import { createGameView } from './view.js';
+import { MEET_BLURBS, tutorialSteps, levelMeetSteps, MeetSequence } from './meet.js';
 import { Store } from './store.js';
 import { LEVELS, getLevel } from './levels.js';
 import { THEORY } from './content.js';
-import { FLAMINGO, HAND_SIGNS } from './art.js';
+import { FLAMINGO } from './art.js';
+import { VERSION } from './version.js';
 
 const piano = new Piano();
 const store = new Store();
@@ -16,14 +22,13 @@ let session = null;
 let bar = null;
 let tonic = 60;
 let mode = 'major';
-let answering = false;
-let currentNoteMidis = []; // the question's notes (one, or a sequence)
-let pendingAnswer = []; // taps so far on a sequence level
-let resolving = false;
-let nextTimeout = null;
-let afterResolution = null;
-let streak = 0;
-let highlightTimeouts = [];
+let round = null; // the active Round (Question lifecycle), or null off the quiz screen
+
+// setTimeout/clearTimeout behind the clock interface the Round schedules against
+const clock = {
+  schedule: (ms, cb) => setTimeout(cb, ms),
+  cancel: (handle) => clearTimeout(handle),
+};
 
 const el = {
   homeScreen: document.getElementById('home-screen'),
@@ -32,8 +37,21 @@ const el = {
   meetScreen: document.getElementById('meet-screen'),
   journey: document.getElementById('journey'),
   levelList: document.getElementById('level-list'),
-  tutorialBtn: document.getElementById('tutorial-btn'),
+  menuBtn: document.getElementById('menu-btn'),
+  menuPopover: document.getElementById('menu-popover'),
+  menuTutorial: document.getElementById('menu-tutorial'),
+  menuHow: document.getElementById('menu-how'),
+  menuReset: document.getElementById('menu-reset'),
+  aboutScreen: document.getElementById('about-screen'),
+  aboutBackBtn: document.getElementById('about-back-btn'),
+  menuNotes: document.getElementById('menu-notes'),
+  notesScreen: document.getElementById('notes-screen'),
+  notesBackBtn: document.getElementById('notes-back-btn'),
+  notesList: document.getElementById('notes-list'),
+  versionTag: document.getElementById('version-tag'),
+  theoryBackBtn: document.getElementById('theory-back-btn'),
   loadStatus: document.getElementById('load-status'),
+  loadError: document.getElementById('load-error'),
   homeBtn: document.getElementById('home-btn'),
   levelTitle: document.getElementById('level-title'),
   prompt: document.getElementById('prompt'),
@@ -66,9 +84,8 @@ const el = {
 
 for (const m of [el.homeMascot, el.quizMascot, el.clearMascot]) m.innerHTML = FLAMINGO;
 
-function setMascot(state) {
-  el.quizMascot.className = `mascot mascot-sm${state ? ` ${state}` : ''}`;
-}
+// The DOM adapter the Round drives, and the meet/notes screens reuse.
+const view = createGameView(el);
 
 function confettiBurst() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -86,14 +103,35 @@ function confettiBurst() {
 }
 
 function showScreen(screen) {
-  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen, el.theoryScreen]) {
+  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen, el.theoryScreen, el.aboutScreen, el.notesScreen]) {
     s.hidden = s !== screen;
   }
+  // Hard-close the menu on every switch — no leftover wobble when home reappears.
+  el.menuPopover.hidden = true;
+  el.menuPopover.classList.remove('closing');
+  el.menuBtn.setAttribute('aria-expanded', 'false');
+}
+
+// Audio load can fail (e.g. samples unreachable). Surface it on a banner that
+// floats above any screen and retries on tap — never leave the user on a dead
+// button with a swallowed rejection.
+function showLoadError(retry) {
+  el.loadError.textContent = 'Could not load the piano — tap to retry 🔁';
+  el.loadError.hidden = false;
+  el.loadError.onclick = () => {
+    hideLoadError();
+    retry();
+  };
+}
+
+function hideLoadError() {
+  el.loadError.hidden = true;
+  el.loadError.onclick = null;
 }
 
 // ---------- routing ----------
-// Hash routes so levels and the tutorial are shareable links:
-// #/  ·  #/tutorial  ·  #/level/3
+// Hash routes so levels, the tutorial and the menu pages are shareable links:
+// #/  ·  #/tutorial  ·  #/level/3  ·  #/about  ·  #/notes
 
 let currentRoute = null;
 
@@ -103,11 +141,10 @@ function setRoute(route) {
 }
 
 function goHome() {
-  answering = false;
-  resolving = false;
-  clearTimeout(nextTimeout);
+  round?.stop();
+  round = null;
   piano.stopAll?.();
-  clearHighlights();
+  view.clearHighlights();
   setRoute('#/');
   renderHome();
   showScreen(el.homeScreen);
@@ -130,6 +167,26 @@ function openLevelFromLink(id) {
   showTheory(id, () => startLevel(id));
 }
 
+function openAbout() {
+  setRoute('#/about');
+  showScreen(el.aboutScreen);
+}
+
+// Notes reference needs live audio, but is reachable without a level/tutorial —
+// so unlock the piano here (the menu tap / route entry is the user gesture).
+async function openNotes() {
+  setRoute('#/notes');
+  renderNotesReference();
+  showScreen(el.notesScreen);
+  try {
+    await piano.init();
+    hideLoadError();
+  } catch (err) {
+    console.error(err);
+    showLoadError(() => openNotes());
+  }
+}
+
 function applyRoute() {
   const levelMatch = location.hash.match(/^#\/level\/(\d+)$/);
   if (levelMatch && getLevel(Number(levelMatch[1]))) {
@@ -142,6 +199,8 @@ function applyRoute() {
     startTutorial();
     return;
   }
+  if (location.hash === '#/about') { openAbout(); return; }
+  if (location.hash === '#/notes') { openNotes(); return; }
   if (state.tutorialDone) goHome();
   else startTutorial();
 }
@@ -212,47 +271,10 @@ function showTheory(levelId, onDone) {
 }
 
 // ---------- meet / tutorial ----------
+// Step data and the pure cursor live in meet.js; main renders each step and
+// handles the audio-unlock on the first tutorial step.
 
-const MEET_BLURBS = {
-  1: 'Do is home itself — the most restful note of all. Tap it to hear it.',
-  2: 'Re sits one step above home, always ready to slide back down. Tap to hear it walk home.',
-  3: 'Mi floats a little above home — sunny and settled. Tap to hear it lean back down to Do.',
-  4: 'Fa is the gentle leaner — it loves drifting down toward Mi. Tap to hear it find its way home.',
-  5: 'Sol is the bright one, higher up — it loves climbing to the next Do. Tap it!',
-  6: 'La is the dreamy one, floating above Sol. Tap to hear it climb home.',
-  7: 'Ti lives right under the next Do — so close it can’t resist pulling up. Tap it!',
-  fi: 'Fi squeezes in between Fa and Sol — sharp, curious, a little cheeky. Tap to hear it tip up into Sol and climb home.',
-  te: 'Te is the mellow rebel — a softened Ti that sits a step lower. Tap to hear it push up through Ti to reach home.',
-};
-
-function tutorialSteps() {
-  return [
-    {
-      title: 'Welcome to DoReMingo! 🦩',
-      body: 'You’ll learn to recognise notes by how they feel inside music. No experience needed — just your ears.',
-      nextLabel: 'Let’s go',
-      initAudio: true,
-    },
-    {
-      title: 'This is home 🏠',
-      body: 'Every piece of music has a key — a home base. This little chord pattern is how DoReMingo shows your ear where home is. It plays before each question.',
-      sound: 'cadence',
-      nextLabel: 'I heard it!',
-      helpHtml: 'Don’t hear anything? Check your volume and the silent switch — still nothing? <a href="https://github.com/tadast/doremingo/issues/new?template=no-sound.yml" target="_blank" rel="noopener">Tell us what happened</a> so we can fix it.',
-    },
-    { title: 'Meet Do', body: MEET_BLURBS[1], stage: 1 },
-    { title: 'Meet Mi', body: MEET_BLURBS[3], stage: 3, resolve: true },
-    { title: 'Meet Sol', body: MEET_BLURBS[5], stage: 5, resolve: true },
-    {
-      title: 'Ready to play! 🎉',
-      body: 'You’ll hear home, then one mystery note. Tap which note you think it was. Wrong guesses are great too — every note walks home afterwards, so your ear learns either way.',
-      nextLabel: 'Start Level 1',
-    },
-  ];
-}
-
-let meetSteps = [];
-let meetIdx = 0;
+let meet = null; // the active MeetSequence, or null
 let meetOnDone = null;
 
 function buildStageButton(degree, withResolution, stageTonic = 60, stageMode = 'major') {
@@ -266,7 +288,7 @@ function buildStageButton(degree, withResolution, stageTonic = 60, stageMode = '
     if (withResolution) {
       const path = resolutionPath(stageTonic, midi, stageMode);
       piano.playSequence(path, piano.now + 0.05, 0.5);
-      scheduleHighlights(path, 0.05, {
+      view.showWalk(path, 0.05, {
         walkEl: el.meetWalk,
         withButtons: false,
         walkTonic: stageTonic,
@@ -280,8 +302,62 @@ function buildStageButton(degree, withResolution, stageTonic = 60, stageMode = '
   return btn;
 }
 
+// ---------- notes reference ----------
+// Every named note in major, each with its tap-to-hear squircle + blurb.
+const NOTE_REFERENCE = [1, 2, 3, 4, 5, 6, 7, 'fi', 'te'];
+
+function buildNoteRow(d) {
+  const midi = degreeToMidi(60, d, 0, 'major');
+  const info = degreeInfo(d, 'major');
+
+  const row = document.createElement('div');
+  row.className = 'note-row';
+
+  const slot = document.createElement('div');
+  slot.className = 'note-slot';
+  const btn = document.createElement('button');
+  btn.className = 'degree-btn';
+  btn.dataset.degree = String(d);
+  btn.innerHTML = `<span>${info.name}</span><span class="num">${info.label}</span>`;
+  btn.addEventListener('click', () => {
+    if (!piano.buffers.size) return; // samples not loaded yet
+    piano.playNote(midi, piano.now + 0.05, 1.2, 0.95);
+  });
+  slot.append(btn);
+
+  const text = document.createElement('div');
+  text.className = 'note-text';
+  const desc = document.createElement('p');
+  desc.className = 'note-desc';
+  desc.textContent = MEET_BLURBS[d];
+
+  // The "Walk home →" link is itself swapped for the lighting note names.
+  const walkSlot = document.createElement('div');
+  walkSlot.className = 'walk-slot';
+  const walk = document.createElement('button');
+  walk.className = 'walk-link';
+  walk.textContent = 'Walk home →';
+  walk.addEventListener('click', () => {
+    if (!piano.buffers.size) return; // samples not loaded yet
+    const path = resolutionPath(60, midi, 'major');
+    piano.playSequence(path, piano.now + 0.05, 0.5);
+    view.showWalk(path, 0.05, { walkEl: walkSlot, withButtons: false, walkTonic: 60, walkMode: 'major', noteDuration: 0.5 });
+    const totalMs = (0.05 + path.length * 0.55) * 1000 + 150;
+    setTimeout(() => walkSlot.replaceChildren(walk), totalMs);
+  });
+  walkSlot.append(walk);
+  text.append(desc, walkSlot);
+
+  row.append(slot, text);
+  return row;
+}
+
+function renderNotesReference() {
+  el.notesList.replaceChildren(...NOTE_REFERENCE.map(buildNoteRow));
+}
+
 function renderMeetStep() {
-  const s = meetSteps[meetIdx];
+  const s = meet.current;
   el.meetTitle.textContent = s.title;
   el.meetBody.textContent = s.body;
   el.meetNextBtn.textContent = s.nextLabel ?? 'Next';
@@ -299,30 +375,36 @@ function renderMeetStep() {
   }
 }
 
-function runMeet(steps, onDone) {
-  meetSteps = steps;
-  meetIdx = 0;
+function runMeet(steps, onDone, skipLabel = 'Skip') {
+  meet = new MeetSequence(steps);
   meetOnDone = onDone;
+  el.meetSkipBtn.textContent = skipLabel;
   renderMeetStep();
   showScreen(el.meetScreen);
 }
 
 async function meetNext(skipped = false) {
-  const s = meetSteps[meetIdx];
+  const s = meet.current;
   if (s.initAudio && !skipped) {
     el.meetNextBtn.disabled = true;
     try {
       await piano.init();
+      hideLoadError();
+    } catch (err) {
+      console.error(err);
+      showLoadError(() => meetNext(false)); // retry this same step
+      return;
     } finally {
       el.meetNextBtn.disabled = false;
     }
   }
-  if (skipped || meetIdx + 1 >= meetSteps.length) {
-    meetOnDone(skipped);
-  } else {
-    meetIdx += 1;
-    renderMeetStep();
+  if (skipped) {
+    meetOnDone(true);
+    return;
   }
+  const { done } = meet.next();
+  if (done) meetOnDone(false);
+  else renderMeetStep();
 }
 
 function startTutorial() {
@@ -333,188 +415,9 @@ function startTutorial() {
     store.save(state);
     if (skipped) goHome();
     else startLevel(1);
-  });
+  }, 'Close');
 }
 
-// ---------- quiz ----------
-
-function renderBar() {
-  el.barFill.style.width = `${(bar.value / bar.size) * 100}%`;
-}
-
-function buildButtons() {
-  el.degrees.replaceChildren(
-    ...level.degrees.map((d) => {
-      const info = degreeInfo(d, mode);
-      const btn = document.createElement('button');
-      btn.className = 'degree-btn';
-      btn.dataset.degree = String(d);
-      const sign = HAND_SIGNS[d] ? `<span class="sign">${HAND_SIGNS[d]}</span>` : '';
-      btn.innerHTML = `${sign}<span>${info.name}</span><span class="num">${info.label}</span>`;
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // don't let the answering tap skip its own resolution
-        answer(d, btn);
-      });
-      return btn;
-    }),
-  );
-}
-
-function setButtonsEnabled(enabled) {
-  for (const b of el.degrees.querySelectorAll('button')) b.disabled = !enabled;
-}
-
-function clearMarks() {
-  for (const b of el.degrees.querySelectorAll('button')) {
-    b.classList.remove('correct', 'wrong', 'playing');
-  }
-}
-
-function clearHighlights() {
-  for (const id of highlightTimeouts) clearTimeout(id);
-  highlightTimeouts = [];
-  for (const b of el.degrees.querySelectorAll('.playing')) b.classList.remove('playing');
-  el.walk.replaceChildren();
-  el.meetWalk.replaceChildren();
-}
-
-/**
- * Show a resolution walk as a row of note names, lighting each name (and
- * its degree button, when buttons are in play) while that note sounds.
- * Matches a playSequence(midis, startDelay, noteDuration, gap) schedule.
- */
-function scheduleHighlights(midis, startDelaySec, {
-  walkEl = el.walk,
-  withButtons = true,
-  walkTonic = tonic,
-  walkMode = mode,
-  noteDuration = 0.45,
-  gap = 0.05,
-} = {}) {
-  const stepMs = (noteDuration + gap) * 1000;
-  const spans = midis.map((midi) => {
-    const key = midiToDegree(walkTonic, midi, walkMode);
-    const span = document.createElement('span');
-    span.className = 'walk-note';
-    span.textContent = key === null ? '·' : degreeInfo(key, walkMode).name;
-    return span;
-  });
-  walkEl.replaceChildren(...spans);
-
-  midis.forEach((midi, i) => {
-    const key = midiToDegree(walkTonic, midi, walkMode);
-    const btn = withButtons && key !== null
-      ? el.degrees.querySelector(`[data-degree="${key}"]`)
-      : null;
-    highlightTimeouts.push(setTimeout(() => {
-      spans[i].classList.add('lit');
-      btn?.classList.add('playing');
-      highlightTimeouts.push(setTimeout(() => {
-        spans[i].classList.remove('lit');
-        btn?.classList.remove('playing');
-      }, noteDuration * 1000));
-    }, startDelaySec * 1000 + i * stepMs));
-  });
-}
-
-function setReplaysEnabled(enabled) {
-  el.replayNoteBtn.disabled = !enabled;
-  el.replayCadenceBtn.disabled = !enabled;
-}
-
-function replayNote() {
-  if (!currentNoteMidis.length || resolving) return;
-  if (currentNoteMidis.length === 1) {
-    piano.playNote(currentNoteMidis[0], piano.now + 0.05, 1.2, 0.95);
-  } else {
-    piano.playSequence(currentNoteMidis, piano.now + 0.05, 0.55, 0.1);
-  }
-}
-
-function replayCadence() {
-  if (resolving) return;
-  let t = piano.now + 0.05;
-  for (const chord of cadenceChords(tonic, mode)) {
-    t = piano.playChord(chord, t, 0.55) + 0.05;
-  }
-}
-
-function seqLen() {
-  return level.sequenceLength ?? 1;
-}
-
-function renderSlots(verdict = null) {
-  if (seqLen() === 1) {
-    el.slots.hidden = true;
-    return;
-  }
-  el.slots.hidden = false;
-  const asked = [].concat(session.currentDegree ?? []);
-  el.slots.replaceChildren(
-    ...Array.from({ length: seqLen() }, (_, i) => {
-      const slot = document.createElement('span');
-      slot.className = 'slot';
-      const picked = pendingAnswer[i];
-      if (picked !== undefined) {
-        slot.classList.add('filled');
-        slot.textContent = degreeInfo(picked, mode).name;
-      }
-      if (verdict) {
-        slot.classList.remove('filled');
-        slot.classList.add(picked === asked[i] ? 'good' : 'bad');
-        if (picked !== asked[i]) {
-          slot.textContent = `${degreeInfo(picked, mode).name}→${degreeInfo(asked[i], mode).name}`;
-        }
-      }
-      return slot;
-    }),
-  );
-  el.backspaceBtn.disabled = !answering || pendingAnswer.length === 0 || !!verdict;
-}
-
-function ask() {
-  clearMarks();
-  clearHighlights();
-  setButtonsEnabled(false);
-  setReplaysEnabled(false);
-  el.feedback.textContent = '';
-  el.feedback.className = 'feedback';
-  setMascot(null);
-  pendingAnswer = [];
-
-  const cadence = session.cadenceDue();
-  const question = session.next();
-  const degrees = [].concat(question);
-  const octaves = level.octaves ?? [0];
-  const octave = octaves[Math.floor(Math.random() * octaves.length)];
-  currentNoteMidis = degrees.map((d) => degreeToMidi(tonic, d, octave, mode));
-
-  let t = piano.now + 0.1;
-  if (cadence) {
-    el.prompt.textContent = 'Listen… this is home 🏠';
-    for (const chord of cadenceChords(tonic, mode)) {
-      t = piano.playChord(chord, t, 0.55) + 0.05;
-    }
-    t += 0.4;
-  } else {
-    el.prompt.textContent = 'Listen…';
-  }
-  if (currentNoteMidis.length === 1) {
-    t = piano.playNote(currentNoteMidis[0], t, 1.2, 0.95);
-  } else {
-    t = piano.playSequence(currentNoteMidis, t, 0.55, 0.1);
-  }
-  renderSlots();
-
-  const msUntilAnswerable = (t - piano.now) * 1000 + 300;
-  nextTimeout = setTimeout(() => {
-    el.prompt.textContent = seqLen() === 1 ? 'Which note was that?' : 'Which notes were those, in order?';
-    setButtonsEnabled(true);
-    setReplaysEnabled(true);
-    answering = true;
-    renderSlots();
-  }, msUntilAnswerable);
-}
 
 function persist() {
   store.save({ ...state, currentLevel: level.id, bar: bar.value });
@@ -541,84 +444,19 @@ function levelCleared() {
   );
 }
 
-function answer(degree, btn) {
-  if (!answering) return;
-
-  if (seqLen() > 1) {
-    pendingAnswer.push(degree);
-    piano.playNote(degreeToMidi(tonic, degree, 0, mode), piano.now + 0.02, 0.4, 0.6);
-    renderSlots();
-    if (pendingAnswer.length < seqLen()) return;
-    finishQuestion(session.recordAnswer(pendingAnswer), null);
-    return;
-  }
-
-  finishQuestion(session.recordAnswer(degree), btn);
-}
-
-function finishQuestion(correct, btn) {
-  answering = false;
-  setButtonsEnabled(false);
-
-  const asked = session.currentDegree;
-  bar = applyAnswer(bar, correct);
-  renderBar();
-  persist();
-
-  const names = [].concat(asked).map((d) => degreeInfo(d, mode).name).join(' → ');
-  if (correct) {
-    streak += 1;
-    btn?.classList.add('correct');
-    const cheer = streak >= 7 ? '🔥🦩🔥' : streak >= 5 ? '🔥🔥' : streak >= 3 ? '🔥' : '🎉';
-    const streakNote = streak >= 3 ? ` <span class="streak-pop">${cheer} ${streak} in a row!</span>` : ` ${cheer}`;
-    el.feedback.innerHTML = `Yes! That was ${names}${streakNote}`;
-    el.feedback.className = 'feedback good';
-    setMascot(streak >= 5 ? 'party' : 'good');
-  } else {
-    streak = 0;
-    btn?.classList.add('wrong');
-    if (seqLen() === 1) {
-      el.degrees.querySelector(`[data-degree="${asked}"]`)?.classList.add('correct');
-    }
-    el.feedback.textContent = `It was ${names} — hear it walk home`;
-    el.feedback.className = 'feedback bad';
-    setMascot('bad');
-  }
-  if (seqLen() > 1) renderSlots('verdict');
-
-  // Resolution: the (last) note walks home to Do (the teaching device, ADR-0001)
-  resolving = true;
-  setReplaysEnabled(false);
-  afterResolution = () => {
-    resolving = false;
-    afterResolution = null;
-    if (isFull(bar)) levelCleared();
-    else ask();
-  };
-  const lastMidi = currentNoteMidis[currentNoteMidis.length - 1];
-  const path = resolutionPath(tonic, lastMidi, mode);
-  const end = piano.playSequence(path, piano.now + 0.45);
-  scheduleHighlights(path, 0.45);
-  const msUntilNext = (end - piano.now) * 1000 + 700;
-  nextTimeout = setTimeout(() => afterResolution?.(), msUntilNext);
-}
-
-// Tap anywhere on the quiz screen during the resolution to skip it.
-function skipResolution() {
-  if (!resolving) return;
-  clearTimeout(nextTimeout);
-  piano.stopAll();
-  clearHighlights();
-  afterResolution?.();
-}
-
 function enterQuiz() {
   el.levelTitle.textContent = `Level ${level.id} — ${level.name}`;
-  el.backspaceBtn.hidden = seqLen() === 1;
-  buildButtons();
-  renderBar();
+  el.backspaceBtn.hidden = (level.sequenceLength ?? 1) === 1;
+  view.buildAnswerButtons(level, mode, (d) => round?.answer(d));
+  round = new Round({
+    level, session, bar, tonic, mode,
+    audio: piano, view, clock,
+    onPersist: () => { bar = round.bar; persist(); },
+    onCleared: levelCleared,
+  });
+  view.renderBar(bar.value, bar.size);
   showScreen(el.quizScreen);
-  ask();
+  round.start();
 }
 
 async function startLevel(id) {
@@ -629,20 +467,17 @@ async function startLevel(id) {
     await piano.init((loaded, total) => {
       el.loadStatus.textContent = `Warming up the piano… ${loaded}/${total}`;
     });
+    hideLoadError();
   } catch (err) {
-    el.loadStatus.textContent = 'Could not load the piano — tap here to retry 🔁';
-    el.loadStatus.onclick = () => {
-      el.loadStatus.onclick = null;
-      startLevel(id);
-    };
     console.error(err);
+    el.loadStatus.hidden = true;
+    showLoadError(() => startLevel(id)); // banner floats over any screen, unlike loadStatus
     return;
   }
   el.loadStatus.hidden = true;
 
   level = getLevel(id);
   session = createSession(level);
-  streak = 0;
   mode = level.mode ?? 'major';
   tonic = level.keyPool === 'random'
     ? 55 + Math.floor(Math.random() * 12) // G3-F#4 — keeps wide octaves in sample range
@@ -657,16 +492,7 @@ async function startLevel(id) {
     if (unmet.length) {
       state.metNotes = [...new Set([...state.metNotes, ...unmet])];
       store.save(state);
-      const steps = unmet.map((d, i) => ({
-        title: `Meet ${degreeInfo(d, mode).name}`,
-        body: MEET_BLURBS[d],
-        stage: d,
-        resolve: true,
-        tonic,
-        mode,
-        nextLabel: i === unmet.length - 1 ? 'Got it — quiz me!' : 'Next',
-      }));
-      runMeet(steps, () => enterQuiz());
+      runMeet(levelMeetSteps(unmet, tonic, mode), () => enterQuiz());
     } else {
       enterQuiz();
     }
@@ -683,22 +509,78 @@ async function startLevel(id) {
 
 // ---------- wiring ----------
 
+el.versionTag.textContent = `v${VERSION}`;
+
+// ---------- burger menu ----------
+
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function openMenu() {
+  el.menuPopover.classList.remove('closing');
+  el.menuPopover.hidden = false;
+  el.menuBtn.setAttribute('aria-expanded', 'true');
+}
+
+function closeMenu() {
+  if (el.menuPopover.hidden) return;
+  el.menuBtn.setAttribute('aria-expanded', 'false');
+  if (reduceMotion()) {
+    el.menuPopover.hidden = true;
+    return;
+  }
+  el.menuPopover.classList.add('closing'); // CSS plays the wobble-out, then we hide
+}
+
+el.menuPopover.addEventListener('animationend', () => {
+  if (el.menuPopover.classList.contains('closing')) {
+    el.menuPopover.hidden = true;
+    el.menuPopover.classList.remove('closing');
+  }
+});
+
+el.menuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = !el.menuPopover.hidden && !el.menuPopover.classList.contains('closing');
+  open ? closeMenu() : openMenu();
+});
+// tap-away / Esc dismiss
+document.addEventListener('click', () => closeMenu());
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+el.menuPopover.addEventListener('click', (e) => e.stopPropagation());
+
+el.menuTutorial.addEventListener('click', () => { closeMenu(); startTutorial(); });
+el.menuHow.addEventListener('click', () => { closeMenu(); openAbout(); });
+el.aboutBackBtn.addEventListener('click', goHome);
+el.menuNotes.addEventListener('click', () => { closeMenu(); openNotes(); });
+el.notesBackBtn.addEventListener('click', () => { view.clearHighlights(); goHome(); });
+el.menuReset.addEventListener('click', () => {
+  closeMenu();
+  if (!confirm('Reset all progress and clear saved data? This cannot be undone.')) return;
+  store.clear();
+  state = store.load();
+  goHome();
+});
+
 el.homeBtn.addEventListener('click', goHome);
 el.nextLevelBtn.addEventListener('click', () => startLevel(level.id + 1));
 el.mapBtn.addEventListener('click', goHome);
-el.tutorialBtn.addEventListener('click', startTutorial);
+el.theoryBackBtn.addEventListener('click', goHome);
 el.meetNextBtn.addEventListener('click', () => meetNext(false));
 el.meetSkipBtn.addEventListener('click', () => meetNext(true));
 el.theoryNextBtn.addEventListener('click', () => theoryOnDone?.());
-el.replayNoteBtn.addEventListener('click', replayNote);
-el.replayCadenceBtn.addEventListener('click', replayCadence);
+el.replayNoteBtn.addEventListener('click', () => round?.replayNote());
+el.replayCadenceBtn.addEventListener('click', () => round?.replayCadence());
 el.backspaceBtn.addEventListener('click', (e) => {
   e.stopPropagation();
-  if (!answering || !pendingAnswer.length) return;
-  pendingAnswer.pop();
-  renderSlots();
+  round?.backspace();
 });
-el.quizScreen.addEventListener('click', skipResolution);
+el.quizScreen.addEventListener('click', () => round?.skip());
+
+// Fade in the home screen's top scrim only once scrolled, so the burger menu
+// gets a backdrop over passing content without dimming the mascot at rest.
+const onScroll = () => document.body.classList.toggle('scrolled', window.scrollY > 8);
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
 
 document.addEventListener('keydown', (e) => {
   if (el.quizScreen.hidden || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -707,20 +589,20 @@ document.addEventListener('keydown', (e) => {
     if (btn && !btn.disabled) btn.click();
   } else if (e.key === ' ') {
     e.preventDefault();
-    if (resolving) skipResolution();
-    else replayNote();
+    if (round?.phase === 'resolving') round.skip();
+    else round?.replayNote();
   } else if (e.key.toLowerCase() === 'c') {
-    replayCadence();
+    round?.replayCadence();
   }
 });
 
 // Test hook for browser automation — not part of the game API.
 window.__doremingo = {
   get currentDegree() { return session?.currentDegree; },
-  get bar() { return bar; },
-  get answering() { return answering; },
+  get bar() { return round?.bar ?? bar; },
+  get answering() { return round?.answering ?? false; },
   get level() { return level; },
-  get meetIdx() { return meetIdx; },
+  get meetIdx() { return meet?.index ?? 0; },
 };
 
 applyRoute();

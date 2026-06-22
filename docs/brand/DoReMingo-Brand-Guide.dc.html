@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; }
+  @keyframes bob { 0%,100%{ transform:translateY(0) rotate(0deg);} 50%{ transform:translateY(-4px) rotate(-2deg);} }
+  @keyframes hop { 0%,100%{ transform:translateY(0) rotate(-2deg);} 40%{ transform:translateY(-13px) rotate(3deg);} }
+  @keyframes party { 0%,100%{ transform:translateY(0) rotate(-6deg) scale(1);} 50%{ transform:translateY(-11px) rotate(6deg) scale(1.06);} }
+  @keyframes sadsway { 0%,100%{ transform:rotate(-3deg) translateY(2px);} 50%{ transform:rotate(3deg) translateY(0);} }
+  @keyframes confetti-fall { 0%{ transform:translateY(0) rotate(0);} 100%{ transform:translateY(520px) rotate(720deg);} }
+  @keyframes sparkle { 0%,100%{ transform:scale(.4); opacity:.2;} 50%{ transform:scale(1); opacity:1;} }
+  @keyframes pulse { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-3px);} }
+  @keyframes drip { 0%{ transform:translateY(0); opacity:0;} 30%{ opacity:1;} 100%{ transform:translateY(10px); opacity:0;} }
+  @keyframes shimmer { 0%{ transform:translateX(-120%);} 100%{ transform:translateX(320%);} }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; } }
+</style>
+</helmet>
+
+<div style="font-family:'Quicksand',ui-rounded,sans-serif;color:#3b2d3f;background:radial-gradient(circle at 14% 8%, #ffe3ee 0%, transparent 42%), radial-gradient(circle at 88% 22%, #dff6ff 0%, transparent 40%), #fff7ed;min-height:100vh;padding:0 0 64px">
+
+  <!-- ============ COVER ============ -->
+  <section data-screen-label="Cover" style="position:relative;overflow:hidden;text-align:center;padding:72px 24px 64px">
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+      <sc-for list="{{ confetti }}" as="c" hint-placeholder-count="0">
+        <div style="position:absolute;top:-24px;left:{{ c.left }}%;width:10px;height:14px;border-radius:3px;background:{{ c.color }};animation:confetti-fall {{ c.dur }}s linear {{ c.delay }}s infinite;opacity:.85"></div>
+      </sc-for>
+    </div>
+    <div style="position:relative">
+      <div style="width:150px;height:180px;margin:0 auto 4px">
+        <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+          <g style="transform-origin:50% 80%;animation:bob 3s ease-in-out infinite">
+            <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <path d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+            <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+            <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+            <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+            <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+            <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+            <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+            <path d="M63.6 16.4 q2.4 -2.8 4.8 0" stroke="#3b2d3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+          </g>
+        </svg>
+      </div>
+      <h1 style="font-size:68px;font-weight:700;letter-spacing:-.02em;margin:0">
+        <span style="color:#ff5d8f">DoReMi</span><span style="color:#3b2d3f">ngo</span>
+      </h1>
+      <p style="font-size:22px;font-weight:500;margin:10px 0 0;color:#3b2d3f">Hear a note. Feel where it lives.</p>
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#b39bbb;margin:26px 0 0">Brand Identity &nbsp;·&nbsp; Guidelines v1.0 &nbsp;·&nbsp; 2026</p>
+    </div>
+  </section>
+
+  <div style="max-width:1080px;margin:0 auto;padding:0 40px">
+
+    <!-- ============ ESSENCE / VOICE ============ -->
+    <section data-screen-label="Voice" style="margin:24px 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">01 — Brand voice</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">A patient friend, never a teacher with a red pen.</h2>
+      <p style="font-size:18px;line-height:1.6;max-width:640px;color:#5d4c62;margin:0 0 32px">DoReMingo is a no-fail ear-training game. Every word, colour and wiggle exists to keep you curious and coming back — wrong answers teach exactly the way right ones do.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:36px">
+        <sc-for list="{{ voice }}" as="v" hint-placeholder-count="4">
+          <div style="background:#fff;border-radius:20px;padding:22px;box-shadow:0 3px 0 #e8d5c4">
+            <div style="font-size:18px;font-weight:700;color:#ff5d8f;margin-bottom:6px">{{ v.t }}</div>
+            <div style="font-size:14.5px;line-height:1.5;color:#5d4c62">{{ v.d }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+        <div style="background:#d8f5ec;border-radius:20px;padding:22px">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#04a47b;font-weight:700;margin-bottom:12px">✓ Say this</div>
+          <sc-for list="{{ sayList }}" as="s" hint-placeholder-count="4">
+            <div style="font-size:16px;font-weight:600;color:#3b2d3f;padding:5px 0">“{{ s }}”</div>
+          </sc-for>
+        </div>
+        <div style="background:#fde3e9;border-radius:20px;padding:22px">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#d2336a;font-weight:700;margin-bottom:12px">✗ Never this</div>
+          <sc-for list="{{ avoidList }}" as="a" hint-placeholder-count="4">
+            <div style="font-size:16px;font-weight:600;color:#8a7a8f;padding:5px 0;text-decoration:line-through;text-decoration-color:#ef476f">“{{ a }}”</div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WORDMARK ============ -->
+    <section data-screen-label="Wordmark" style="margin:0 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">02 — Wordmark</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">DoReMingo, in Quicksand.</h2>
+      <p style="font-size:18px;line-height:1.6;max-width:640px;color:#5d4c62;margin:0 0 28px">The split spelling <strong>DoReMi&middot;ngo</strong> carries the whole idea — solfège plus flamingo. Set in Quicksand 700, tracking −2%. Three approved treatments:</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
+        <div style="position:relative;background:#fff;border-radius:22px;padding:40px 24px;box-shadow:0 3px 0 #e8d5c4;text-align:center">
+          <div style="position:absolute;top:14px;left:14px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;background:#06d6a0;color:#3b2d3f;padding:4px 10px;border-radius:999px">RECOMMENDED</div>
+          <div style="font-size:42px;font-weight:700;letter-spacing:-.02em"><span style="color:#ff5d8f">DoReMi</span><span style="color:#3b2d3f">ngo</span></div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#8a7a8f;margin-top:16px">Two-tone · pink + plum</div>
+        </div>
+        <div style="background:#fff;border-radius:22px;padding:40px 24px;box-shadow:0 3px 0 #e8d5c4;text-align:center">
+          <div style="font-size:42px;font-weight:700;letter-spacing:-.02em"><span style="color:#ff5d8f">Do</span><span style="color:#f4845f">Re</span><span style="color:#4cc9f0">Mi</span><span style="color:#3b2d3f">ngo</span></div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#8a7a8f;margin-top:16px">Solfège · playful, for splashes</div>
+        </div>
+        <div style="background:#fff;border-radius:22px;padding:40px 24px;box-shadow:0 3px 0 #e8d5c4;text-align:center">
+          <div style="font-size:42px;font-weight:700;letter-spacing:-.02em;color:#3b2d3f">DoReMingo</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#8a7a8f;margin-top:16px">Mono plum · stamp, embroidery, dark-on-light</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LOCKUPS ============ -->
+    <section data-screen-label="Lockups" style="margin:0 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">03 — Lockups</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 28px;letter-spacing:-.01em">Mark + wordmark, three ways.</h2>
+
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:stretch">
+        <!-- horizontal -->
+        <div style="background:#fff;border-radius:22px;padding:36px;box-shadow:0 3px 0 #e8d5c4;display:flex;align-items:center;gap:22px">
+          <div style="width:78px;height:94px;flex-shrink:0">
+            <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+              <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+              <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+              <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+              <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+              <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+              <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+              <circle cx="66" cy="17" r="2.8" fill="#3b2d3f"/>
+              <circle cx="67" cy="16" r="1" fill="#fff"/>
+              <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:38px;font-weight:700;letter-spacing:-.02em"><span style="color:#ff5d8f">DoReMi</span><span style="color:#3b2d3f">ngo</span></div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:14px">HORIZONTAL · app headers, web nav</div>
+          </div>
+        </div>
+        <!-- mono on pink -->
+        <div style="background:#ff5d8f;border-radius:22px;padding:36px;box-shadow:0 3px 0 #d2336a;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+          <div style="width:62px;height:74px;margin-bottom:10px">
+            <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+              <path d="M62 60 C70 52 74 40 68 28" stroke="#fff7ed" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <ellipse cx="48" cy="70" rx="26" ry="20" fill="#fff7ed"/>
+              <circle cx="68" cy="20" r="9" fill="#fff7ed"/>
+              <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+              <circle cx="66" cy="17" r="2.6" fill="#3b2d3f"/>
+            </svg>
+          </div>
+          <div style="font-size:30px;font-weight:700;letter-spacing:-.02em;color:#fff7ed">DoReMingo</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#ffd9e6;margin-top:12px">REVERSED · splash, app icon, merch</div>
+        </div>
+        <!-- stacked -->
+        <div style="grid-column:1 / -1;background:#fff;border-radius:22px;padding:40px;box-shadow:0 3px 0 #e8d5c4;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px">
+          <div style="width:92px;height:110px">
+            <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+              <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+              <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+              <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+              <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+              <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+              <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+              <circle cx="66" cy="17" r="2.8" fill="#3b2d3f"/>
+              <circle cx="67" cy="16" r="1" fill="#fff"/>
+              <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+            </svg>
+          </div>
+          <div style="font-size:46px;font-weight:700;letter-spacing:-.02em"><span style="color:#ff5d8f">DoReMi</span><span style="color:#3b2d3f">ngo</span></div>
+          <div style="font-size:16px;font-weight:500;color:#5d4c62">Hear a note. Feel where it lives.</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:14px">STACKED · home screen, posters, share cards</div>
+        </div>
+      </div>
+
+      <sc-if value="{{ showSpecs }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:24px;font-family:'Space Mono',monospace;font-size:12px;color:#8a7a8f">
+          <span>↔ Clear space = height of the flamingo head on all sides</span>
+          <span>↘ Min wordmark width 96px · min mark 28px</span>
+          <span>⊘ Don't recolour the beak, stretch, or add outlines</span>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- ============ APP ICON ============ -->
+    <section data-screen-label="App icon" style="margin:0 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">04 — App icon</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">One bold bird that survives 16&nbsp;px.</h2>
+      <p style="font-size:18px;line-height:1.6;max-width:640px;color:#5d4c62;margin:0 0 28px">The hook: Mingo's round body <em>is</em> a note-head, the neck its stem, the beak its flag — a flamingo and an eighth-note in one shape. Legs drop away so it still reads at favicon size. Three tile options:</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-bottom:36px">
+        <!-- option A pink (recommended) -->
+        <div style="text-align:center">
+          <div style="position:relative;width:148px;height:148px;margin:0 auto;border-radius:{{ iconRadius }};background:#ff5d8f;display:grid;place-items:center;box-shadow:0 4px 0 #d2336a">
+            <div style="position:absolute;top:8px;right:8px;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;background:#06d6a0;color:#3b2d3f;padding:3px 7px;border-radius:999px">PICK</div>
+            <svg viewBox="0 0 100 100" style="width:82%;height:82%;overflow:visible">
+              <ellipse cx="41" cy="70" rx="25" ry="18.5" transform="rotate(-20 41 70)" fill="#fff7ed"/>
+              <path d="M61 61 C65 47 61 34 63 23" stroke="#fff7ed" stroke-width="11" fill="none" stroke-linecap="round"/>
+              <circle cx="63" cy="21" r="12.5" fill="#fff7ed"/>
+              <polygon points="73,13 96,22 75,29" fill="#ffd166"/>
+              <polygon points="96,22 88,18.5 85,25.5" fill="#3b2d3f"/>
+              <circle cx="58" cy="19" r="3.6" fill="#3b2d3f"/>
+              <circle cx="59.2" cy="17.8" r="1.2" fill="#fff7ed"/>
+            </svg>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:12px">Pink tile · cream bird</div>
+        </div>
+        <!-- option B cream -->
+        <div style="text-align:center">
+          <div style="width:148px;height:148px;margin:0 auto;border-radius:{{ iconRadius }};background:#fff7ed;display:grid;place-items:center;box-shadow:0 4px 0 #e8d5c4">
+            <svg viewBox="0 0 100 100" style="width:82%;height:82%;overflow:visible">
+              <ellipse cx="41" cy="70" rx="25" ry="18.5" transform="rotate(-20 41 70)" fill="#ff5d8f"/>
+              <path d="M61 61 C65 47 61 34 63 23" stroke="#ff5d8f" stroke-width="11" fill="none" stroke-linecap="round"/>
+              <circle cx="63" cy="21" r="12.5" fill="#ff5d8f"/>
+              <polygon points="73,13 96,22 75,29" fill="#ffd166"/>
+              <polygon points="96,22 88,18.5 85,25.5" fill="#3b2d3f"/>
+              <circle cx="58" cy="19" r="3.6" fill="#3b2d3f"/>
+              <circle cx="59.2" cy="17.8" r="1.2" fill="#ffd1e0"/>
+            </svg>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:12px">Cream tile · pink bird</div>
+        </div>
+        <!-- option C sky -->
+        <div style="text-align:center">
+          <div style="width:148px;height:148px;margin:0 auto;border-radius:{{ iconRadius }};background:#4cc9f0;display:grid;place-items:center;box-shadow:0 4px 0 #2ba6cc">
+            <svg viewBox="0 0 100 100" style="width:82%;height:82%;overflow:visible">
+              <ellipse cx="41" cy="70" rx="25" ry="18.5" transform="rotate(-20 41 70)" fill="#fff7ed"/>
+              <path d="M61 61 C65 47 61 34 63 23" stroke="#fff7ed" stroke-width="11" fill="none" stroke-linecap="round"/>
+              <circle cx="63" cy="21" r="12.5" fill="#fff7ed"/>
+              <polygon points="73,13 96,22 75,29" fill="#ffd166"/>
+              <polygon points="96,22 88,18.5 85,25.5" fill="#3b2d3f"/>
+              <circle cx="58" cy="19" r="3.6" fill="#3b2d3f"/>
+              <circle cx="59.2" cy="17.8" r="1.2" fill="#fff7ed"/>
+            </svg>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:12px">Sky tile · cream bird</div>
+        </div>
+      </div>
+
+      <!-- scaling proof -->
+      <div style="background:#fff;border-radius:22px;padding:28px;box-shadow:0 3px 0 #e8d5c4">
+        <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#8a7a8f;font-weight:700;margin-bottom:20px">Reads at every size — 1024 → 16 px</div>
+        <div style="display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap">
+          <sc-for list="{{ iconSizes }}" as="s" hint-placeholder-count="5">
+            <div style="text-align:center">
+              <div style="width:{{ s.px }}px;height:{{ s.px }}px;border-radius:{{ s.r }};background:#ff5d8f;display:grid;place-items:center;overflow:hidden">
+                <svg viewBox="0 0 100 100" style="width:82%;height:82%;overflow:visible">
+                  <ellipse cx="41" cy="70" rx="25" ry="18.5" transform="rotate(-20 41 70)" fill="#fff7ed"/>
+                  <path d="M61 61 C65 47 61 34 63 23" stroke="#fff7ed" stroke-width="11" fill="none" stroke-linecap="round"/>
+                  <circle cx="63" cy="21" r="12.5" fill="#fff7ed"/>
+                  <polygon points="73,13 96,22 75,29" fill="#ffd166"/>
+                  <polygon points="96,22 88,18.5 85,25.5" fill="#3b2d3f"/>
+                  <circle cx="58" cy="19" r="3.6" fill="#3b2d3f"/>
+                </svg>
+              </div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:8px">{{ s.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COLOR ============ -->
+    <section data-screen-label="Color" style="margin:0 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">05 — Colour system</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 28px;letter-spacing:-.01em">Cream, plum, and a bag of sweets.</h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-bottom:40px">
+        <sc-for list="{{ core }}" as="c" hint-placeholder-count="7">
+          <div style="border-radius:18px;overflow:hidden;box-shadow:0 3px 0 #e8d5c4;background:#fff">
+            <div style="height:92px;background:{{ c.hex }};border-bottom:1px solid rgba(0,0,0,.05)"></div>
+            <div style="padding:12px 14px">
+              <div style="font-weight:700;font-size:15px">{{ c.name }}</div>
+              <div style="font-family:'Space Mono',monospace;font-size:12px;color:#8a7a8f;margin-top:2px">{{ c.hex }}</div>
+              <div style="font-size:12.5px;color:#8a7a8f;margin-top:3px">{{ c.role }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <h3 style="font-size:20px;font-weight:700;margin:0 0 6px">Degree scale — the seven note buttons</h3>
+      <p style="font-size:15px;color:#5d4c62;margin:0 0 18px;max-width:600px">Each scale degree owns a colour, cycling warm→cool as pitch rises. Always paired with its Curwen hand sign, never a note name.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:44px">
+        <sc-for list="{{ degrees }}" as="d" hint-placeholder-count="7">
+          <div style="width:84px;height:60px;border-radius:16px;background:{{ d.hex }};display:flex;flex-direction:column;align-items:center;justify-content:center;color:{{ d.fg }}">
+            <span style="font-weight:700;font-size:17px">{{ d.name }}</span>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;opacity:.85">{{ d.hex }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <h3 style="font-size:20px;font-weight:700;margin:0 0 6px">AA contrast pairs</h3>
+      <p style="font-size:15px;color:#5d4c62;margin:0 0 18px;max-width:620px">The brights are mid-tone, so they shine as <strong>backgrounds with plum-ink text</strong>. For body copy, keep ink on cream/white. The one trap — white on pink — fails; use plum ink, or the new text-tint <strong>Berry #c42e62</strong> for small pink type.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ pairs }}" as="p" hint-placeholder-count="10">
+          <div style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:10px 14px;box-shadow:0 2px 0 #e8d5c4">
+            <div style="width:128px;height:50px;border-radius:11px;display:grid;place-items:center;background:{{ p.bgHex }};color:{{ p.fgHex }};font-weight:700;font-size:18px;flex-shrink:0">Hear Do</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:14.5px">{{ p.fg }} on {{ p.bg }}</div>
+              <div style="font-family:'Space Mono',monospace;font-size:12px;color:#8a7a8f">{{ p.ratio }}:1</div>
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:999px;background:{{ p.badgeBg }};color:{{ p.badgeFg }};flex-shrink:0">{{ p.pass }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ TYPE ============ -->
+    <section data-screen-label="Type" style="margin:0 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">06 — Typography</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">Quicksand, soft and round.</h2>
+      <p style="font-size:18px;line-height:1.6;max-width:640px;color:#5d4c62;margin:0 0 28px">One free family does everything — a friendly geometric sans with circular bowls that echo the flamingo. Space Mono labels technical bits. Weights 400 / 500 / 600 / 700 only.</p>
+      <div style="background:#fff;border-radius:22px;padding:8px 28px;box-shadow:0 3px 0 #e8d5c4">
+        <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="7">
+          <div style="display:flex;align-items:baseline;gap:22px;border-bottom:2px dashed #f3dccb;padding:16px 0">
+            <div style="width:150px;flex-shrink:0;font-family:'Space Mono',monospace;font-size:11.5px;color:#8a7a8f;line-height:1.5">{{ t.spec }}</div>
+            <div style="flex:1;min-width:0;color:#3b2d3f;font-size:{{ t.size }}px;font-weight:{{ t.weight }};letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.sample }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ CHARACTER SHEET ============ -->
+    <section data-screen-label="Character" style="margin:0 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">07 — Mingo the flamingo</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">Four moods, all built from soft shapes.</h2>
+      <p style="font-size:18px;line-height:1.6;max-width:640px;color:#5d4c62;margin:0 0 28px">Mingo is drawn entirely from circles, ellipses and rounded strokes — no fine illustration, so it scales and animates cleanly. Even <em>Sad</em> stays gentle: a small frown, a single tear, never distress.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px">
+        <!-- IDLE -->
+        <div style="background:#fff;border-radius:22px;padding:20px;box-shadow:0 3px 0 #e8d5c4;text-align:center">
+          <div style="width:120px;height:150px;margin:0 auto">
+            <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+              <g style="transform-origin:50% 80%;animation:bob 3s ease-in-out infinite">
+                <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <path d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+                <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+                <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+                <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+                <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+                <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+                <circle cx="66" cy="17" r="2.8" fill="#3b2d3f"/>
+                <circle cx="67" cy="16" r="1" fill="#fff"/>
+                <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+              </g>
+            </svg>
+          </div>
+          <div style="font-weight:700;font-size:16px;margin-top:8px">Idle</div>
+          <div style="font-size:12.5px;color:#8a7a8f">Home screen · waiting · gentle bob</div>
+        </div>
+
+        <!-- HAPPY -->
+        <div style="background:#fff;border-radius:22px;padding:20px;box-shadow:0 3px 0 #e8d5c4;text-align:center">
+          <div style="width:120px;height:150px;margin:0 auto">
+            <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+              <g style="transform-origin:50% 80%;animation:hop 0.7s ease-out infinite">
+                <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <path d="M50 88 L60 92 L50 98" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+                <ellipse cx="41" cy="70" rx="13" ry="9" fill="#ff87ad" style="transform-origin:48px 72px;transform:rotate(-12deg)"/>
+                <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+                <path d="M62 60 C70 50 74 38 68 26" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                <circle cx="68" cy="18" r="9" fill="#ff5d8f"/>
+                <polygon points="76,15 91,22 80,27" fill="#ffd166"/>
+                <polygon points="91,22 85,20 84,25" fill="#3b2d3f"/>
+                <path d="M63.4 14.6 q2.4 -3 4.8 0" stroke="#3b2d3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <circle cx="63" cy="21" r="2.4" fill="#ff87ad"/>
+                <g style="transform-origin:88px 8px;animation:sparkle 1.3s ease-in-out infinite"><path d="M88 3 L89.4 7 L93 8 L89.4 9 L88 13 L86.6 9 L83 8 L86.6 7 Z" fill="#ffd166"/></g>
+                <g style="transform-origin:22px 40px;animation:sparkle 1.3s ease-in-out 0.4s infinite"><path d="M22 36 L23 39 L26 40 L23 41 L22 44 L21 41 L18 40 L21 39 Z" fill="#06d6a0"/></g>
+              </g>
+            </svg>
+          </div>
+          <div style="font-weight:700;font-size:16px;margin-top:8px">Happy</div>
+          <div style="font-size:12.5px;color:#8a7a8f">Correct answer · hop + sparkle</div>
+        </div>
+
+        <!-- PARTY -->
+        <div style="background:#fff;border-radius:22px;padding:20px;box-shadow:0 3px 0 #e8d5c4;text-align:center">
+          <div style="width:120px;height:150px;margin:0 auto">
+            <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+              <circle cx="20" cy="34" r="3" fill="#4cc9f0"/>
+              <circle cx="84" cy="46" r="3" fill="#06d6a0"/>
+              <rect x="14" y="60" width="5" height="5" rx="1" fill="#ffd166" transform="rotate(20 16 62)"/>
+              <rect x="86" y="74" width="5" height="5" rx="1" fill="#c66cf6" transform="rotate(-15 88 76)"/>
+              <g style="transform-origin:50% 80%;animation:party 0.7s ease-in-out infinite">
+                <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <path d="M50 88 L61 90 L52 98" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+                <ellipse cx="41" cy="69" rx="13" ry="9" fill="#ff87ad" style="transform-origin:48px 72px;transform:rotate(-16deg)"/>
+                <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+                <path d="M62 60 C70 50 74 38 68 26" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                <circle cx="68" cy="18" r="9" fill="#ff5d8f"/>
+                <polygon points="76,15 91,22 80,27" fill="#ffd166"/>
+                <polygon points="91,22 85,20 84,25" fill="#3b2d3f"/>
+                <path d="M63.4 14.6 q2.4 -3 4.8 0" stroke="#3b2d3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <circle cx="63" cy="21" r="2.4" fill="#ff87ad"/>
+                <polygon points="60,6 76,6 68,-9" fill="#06d6a0"/>
+                <polygon points="60,6 76,6 68,-9" fill="none" stroke="#fff7ed" stroke-width="1.4" stroke-dasharray="3 3"/>
+                <circle cx="68" cy="-10" r="3" fill="#4cc9f0"/>
+              </g>
+            </svg>
+          </div>
+          <div style="font-weight:700;font-size:16px;margin-top:8px">Party</div>
+          <div style="font-size:12.5px;color:#8a7a8f">Level cleared · hat + confetti burst</div>
+        </div>
+
+        <!-- SAD -->
+        <div style="background:#fff;border-radius:22px;padding:20px;box-shadow:0 3px 0 #e8d5c4;text-align:center">
+          <div style="width:120px;height:150px;margin:0 auto">
+            <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+              <g style="transform-origin:50% 85%;animation:sadsway 2.6s ease-in-out infinite">
+                <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <path d="M50 88 L57 98 L47 99" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <ellipse cx="48" cy="72" rx="26" ry="20" fill="#ff5d8f"/>
+                <ellipse cx="42" cy="76" rx="13" ry="8" fill="#ff87ad"/>
+                <path d="M24 64 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+                <path d="M62 62 C66 56 64 48 59 42" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                <circle cx="58" cy="36" r="9" fill="#ff5d8f"/>
+                <polygon points="55,42 50,55 60,48" fill="#ffd166"/>
+                <polygon points="50,55 53,48 57,52" fill="#3b2d3f"/>
+                <path d="M53 31 q2.5 -1.6 4.6 0" stroke="#3b2d3f" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                <circle cx="56" cy="36" r="2.6" fill="#3b2d3f"/>
+                <circle cx="56.6" cy="36.8" r="0.9" fill="#fff"/>
+                <ellipse cx="51" cy="40" rx="2" ry="2.8" fill="#4cc9f0" style="transform-origin:51px 40px;animation:drip 1.8s ease-in-out infinite"/>
+              </g>
+            </svg>
+          </div>
+          <div style="font-weight:700;font-size:16px;margin-top:8px">Sad</div>
+          <div style="font-size:12.5px;color:#8a7a8f">Gentle miss · droop + one tear (no shame)</div>
+        </div>
+      </div>
+
+      <!-- poke the flamingo -->
+      <div style="margin-top:20px;background:#fff;border-radius:22px;padding:24px;box-shadow:0 3px 0 #e8d5c4;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        <div style="width:90px;height:112px;flex-shrink:0">
+          <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+            <g style="transform-origin:50% 80%;animation:{{ heroAnim }}">
+              <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+              <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+              <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+              <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+              <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+              <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+              <circle cx="66" cy="17" r="2.8" fill="#3b2d3f"/>
+              <circle cx="67" cy="16" r="1" fill="#fff"/>
+              <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+            </g>
+          </svg>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:700;font-size:16px;margin-bottom:4px">Poke Mingo</div>
+          <div style="font-size:13.5px;color:#8a7a8f;margin-bottom:12px">Tap a mood to preview the motion curve.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <sc-for list="{{ moods }}" as="m" hint-placeholder-count="4">
+              <button onClick="{{ m.on }}" style="{{ m.style }}" style-active="transform:translateY(2px)">{{ m.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMPONENTS ============ -->
+    <section data-screen-label="Components" style="margin:0 0 88px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">08 — Components</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 28px;letter-spacing:-.01em">Chunky, tactile, toy-like.</h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px">
+        <!-- buttons -->
+        <div style="background:#fff;border-radius:22px;padding:28px;box-shadow:0 3px 0 #e8d5c4">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a7a8f;font-weight:700;margin-bottom:18px">Pill buttons · press = 3px drop</div>
+          <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start">
+            <button style="font-family:inherit;font-size:18px;font-weight:700;padding:16px 34px;border:none;border-radius:999px;background:#ff5d8f;color:#fff;cursor:pointer;box-shadow:0 5px 0 #d2336a" style-active="transform:translateY(3px);box-shadow:0 2px 0 #d2336a">Start playing</button>
+            <button style="font-family:inherit;font-size:18px;font-weight:700;padding:16px 34px;border:none;border-radius:999px;background:#fff;color:#ff5d8f;cursor:pointer;box-shadow:0 5px 0 #e8d5c4" style-active="transform:translateY(3px);box-shadow:0 2px 0 #e8d5c4">How it works 🎓</button>
+            <button style="font-family:inherit;font-size:16px;font-weight:700;padding:13px 26px;border:none;border-radius:999px;background:#ffd166;color:#3b2d3f;cursor:pointer;box-shadow:0 5px 0 #e0b43f" style-active="transform:translateY(3px);box-shadow:0 2px 0 #e0b43f">Next level →</button>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f">Small label on pink? use plum ink, not white.</div>
+          </div>
+        </div>
+
+        <!-- chips + bar -->
+        <div style="background:#fff;border-radius:22px;padding:28px;box-shadow:0 3px 0 #e8d5c4">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a7a8f;font-weight:700;margin-bottom:18px">Chips · progress · slots</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+            <button style="font-family:inherit;font-size:14.5px;font-weight:600;border:none;background:#fff7ed;border-radius:999px;padding:11px 18px;cursor:pointer;box-shadow:0 2px 0 #e8d5c4">🔁 Hear it again</button>
+            <button style="font-family:inherit;font-size:14.5px;font-weight:600;border:none;background:#fff7ed;border-radius:999px;padding:11px 18px;cursor:pointer;box-shadow:0 2px 0 #e8d5c4">🏠 Hear home</button>
+          </div>
+          <div style="height:18px;border-radius:999px;background:#f3e3d3;overflow:hidden;margin-bottom:6px">
+            <div style="height:100%;width:68%;border-radius:999px;background:linear-gradient(90deg,#ffd166,#06d6a0)"></div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-bottom:20px">Level bar — fills on right, drains gently on miss. No fail.</div>
+          <div style="display:flex;gap:10px">
+            <div style="min-width:54px;height:46px;border-radius:14px;background:#d8f5ec;box-shadow:inset 0 0 0 2px #06d6a0;display:grid;place-items:center;font-weight:700">Do</div>
+            <div style="min-width:54px;height:46px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 2px #4cc9f0;display:grid;place-items:center;font-weight:700">Mi</div>
+            <div style="min-width:54px;height:46px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 2px #e8d5c4;display:grid;place-items:center;font-weight:700;color:#c4b2c9">?</div>
+          </div>
+        </div>
+
+        <!-- degree buttons -->
+        <div style="grid-column:1 / -1;background:#fff;border-radius:22px;padding:28px;box-shadow:0 3px 0 #e8d5c4">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a7a8f;font-weight:700;margin-bottom:18px">Degree buttons · colour + Curwen hand sign + number</div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center">
+            <button style="min-width:84px;min-height:84px;border:none;border-radius:20px;font-family:inherit;font-weight:700;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#ff5d8f;font-size:22px" style-active="transform:scale(.94)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.92)"><circle cx="12" cy="13" r="7"/></svg>Do<span style="font-size:12px;font-weight:500;opacity:.85">1</span></button>
+            <button style="min-width:84px;min-height:84px;border:none;border-radius:20px;font-family:inherit;font-weight:700;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#f4845f;font-size:22px" style-active="transform:scale(.94)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.92)"><rect x="3" y="10" width="18" height="6" rx="3" transform="rotate(-35 12 13)"/></svg>Re<span style="font-size:12px;font-weight:500;opacity:.85">2</span></button>
+            <button style="min-width:84px;min-height:84px;border:none;border-radius:20px;font-family:inherit;font-weight:700;color:#3b2d3f;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#ffd166;font-size:22px" style-active="transform:scale(.94)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(59,45,63,.8)"><rect x="3" y="10" width="18" height="6" rx="3"/></svg>Mi<span style="font-size:12px;font-weight:500;opacity:.85">3</span></button>
+            <button style="min-width:84px;min-height:84px;border:none;border-radius:20px;font-family:inherit;font-weight:700;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#06d6a0;font-size:22px" style-active="transform:scale(.94)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.92)"><rect x="4" y="8" width="16" height="6" rx="3"/><path d="M8 14 l3 7 l3 -7 z"/></svg>Fa<span style="font-size:12px;font-weight:500;opacity:.85">4</span></button>
+            <button style="min-width:84px;min-height:84px;border:none;border-radius:20px;font-family:inherit;font-weight:700;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#4cc9f0;font-size:22px" style-active="transform:scale(.94)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.92)"><rect x="9" y="3" width="6" height="18" rx="3"/></svg>Sol<span style="font-size:12px;font-weight:500;opacity:.85">5</span></button>
+            <button style="min-width:84px;min-height:84px;border:none;border-radius:20px;font-family:inherit;font-weight:700;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#7b6cf6;font-size:22px" style-active="transform:scale(.94)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.92)"><path d="M4 9 q8 -4 16 2 q-2 8 -10 8 q-7 -2 -6 -10 z"/></svg>La<span style="font-size:12px;font-weight:500;opacity:.85">6</span></button>
+            <button style="min-width:84px;min-height:84px;border:none;border-radius:20px;font-family:inherit;font-weight:700;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#c66cf6;font-size:22px" style-active="transform:scale(.94)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:rgba(255,255,255,.92)"><circle cx="12" cy="16" r="5"/><rect x="13" y="2" width="4" height="11" rx="2" transform="rotate(20 15 8)"/></svg>Ti<span style="font-size:12px;font-weight:500;opacity:.85">7</span></button>
+          </div>
+        </div>
+
+        <!-- explanation window -->
+        <div style="grid-column:1 / -1;background:#fff;border-radius:22px;padding:0;box-shadow:0 3px 0 #e8d5c4;overflow:hidden">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a7a8f;font-weight:700;padding:24px 28px 0">Explanation window · Meet-the-Note</div>
+          <div style="display:flex;gap:22px;align-items:center;padding:20px 28px 28px;flex-wrap:wrap">
+            <div style="width:84px;height:104px;flex-shrink:0">
+              <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+                <g style="transform-origin:50% 80%;animation:bob 3s ease-in-out infinite">
+                  <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+                  <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+                  <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                  <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+                  <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+                  <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+                  <path d="M63.6 16.4 q2.4 -2.8 4.8 0" stroke="#3b2d3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+                </g>
+              </svg>
+            </div>
+            <div style="flex:1;min-width:220px;border-left:2px dashed #f3dccb;padding-left:22px">
+              <div style="font-size:24px;font-weight:700;margin-bottom:4px">Meet <span style="color:#ff5d8f">Re</span></div>
+              <div style="font-size:16px;line-height:1.55;color:#5d4c62;margin-bottom:16px">Re sits one step above home. It leans — you can feel it wanting to fall back down to Do. Tap it, then hear it walk home.</div>
+              <button style="font-family:inherit;font-size:16px;font-weight:700;padding:13px 28px;border:none;border-radius:999px;background:#ff5d8f;color:#fff;cursor:pointer;box-shadow:0 4px 0 #d2336a" style-active="transform:translateY(2px);box-shadow:0 2px 0 #d2336a">Let's play</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ START SCREEN ============ -->
+    <section data-screen-label="Start screen" style="margin:0 0 72px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">09 — Animated start screen</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 28px;letter-spacing:-.01em">The whole feeling, in one screen.</h2>
+
+      <div style="display:flex;justify-content:center">
+        <div style="position:relative;width:320px;height:650px;border-radius:46px;background:#1d141f;padding:12px;box-shadow:0 18px 40px rgba(59,45,63,.28)">
+          <div style="position:absolute;top:22px;left:50%;transform:translateX(-50%);width:120px;height:26px;border-radius:999px;background:#1d141f;z-index:3"></div>
+          <div style="position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:radial-gradient(circle at 16% 10%, #ffe3ee 0%, transparent 44%), radial-gradient(circle at 86% 24%, #dff6ff 0%, transparent 42%), #fff7ed;display:flex;flex-direction:column;align-items:center;padding:56px 22px 22px;text-align:center">
+            <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+              <sc-for list="{{ phoneConfetti }}" as="c" hint-placeholder-count="0">
+                <div style="position:absolute;top:-20px;left:{{ c.left }}%;width:8px;height:11px;border-radius:2px;background:{{ c.color }};animation:confetti-fall {{ c.dur }}s linear {{ c.delay }}s infinite;opacity:.8"></div>
+              </sc-for>
+            </div>
+            <div style="position:relative;width:104px;height:128px">
+              <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+                <g style="transform-origin:50% 80%;animation:bob 3s ease-in-out infinite">
+                  <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                  <path d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                  <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+                  <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+                  <path d="M24 62 q-8 -2 -10 6 q7 3 12 -1 z" fill="#ff87ad"/>
+                  <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                  <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+                  <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+                  <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+                  <path d="M63.6 16.4 q2.4 -2.8 4.8 0" stroke="#3b2d3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+                </g>
+              </svg>
+            </div>
+            <div style="position:relative;font-size:40px;font-weight:700;letter-spacing:-.02em;margin-top:2px"><span style="color:#ff5d8f">DoReMi</span><span style="color:#3b2d3f">ngo</span></div>
+            <div style="position:relative;font-size:15px;font-weight:500;color:#5d4c62;margin-top:4px">Hear a note. Feel where it lives.</div>
+            <div style="position:relative;width:100%;display:flex;flex-direction:column;gap:10px;margin-top:24px">
+              <div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 2px 0 #e8d5c4;outline:3px solid #ff5d8f;text-align:left">
+                <div style="width:40px;height:40px;border-radius:50%;background:#d8f5ec;display:grid;place-items:center;font-size:20px;flex-shrink:0">🎵</div>
+                <div style="flex:1"><div style="font-weight:700;font-size:15px">Do, Mi & Sol</div><div style="font-size:12px;color:#8a7a8f">The tonic triad · in progress</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 2px 0 #e8d5c4;text-align:left">
+                <div style="width:40px;height:40px;border-radius:50%;background:#fff7ed;display:grid;place-items:center;font-size:20px;flex-shrink:0">🔒</div>
+                <div style="flex:1"><div style="font-weight:700;font-size:15px;color:#8a7a8f">Meet Re</div><div style="font-size:12px;color:#c4b2c9">Unlocks next</div></div>
+              </div>
+            </div>
+            <button style="position:relative;font-family:inherit;font-size:19px;font-weight:700;padding:16px 40px;border:none;border-radius:999px;background:#ff5d8f;color:#fff;cursor:pointer;box-shadow:0 5px 0 #d2336a;margin-top:18px;animation:pulse 1.8s ease-in-out infinite">Keep playing</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEVEL SCREEN ============ -->
+    <section data-screen-label="Level screen" style="margin:0 0 80px">
+      <p style="font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c42e62;margin:0 0 10px;font-weight:700">10 — Level screen, redesigned</p>
+      <h2 style="font-size:34px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">In-game: back where it belongs, Mingo where he matters.</h2>
+      <p style="font-size:18px;line-height:1.6;max-width:660px;color:#5d4c62;margin:0 0 24px">Three fixes from the live build: the ambiguous 🗺️ map glyph becomes a plain back chevron top-left; the question + answers vertically centre into the thumb zone; and Mingo stops floating — he stands centre-bottom and <em>talks up</em> through a speech bubble, so every reaction comes from one friendly place.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:34px">
+        <div style="background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 3px 0 #e8d5c4">
+          <div style="font-weight:700;font-size:15px;color:#ff5d8f;margin-bottom:4px">← Back, top-left</div>
+          <div style="font-size:14px;line-height:1.5;color:#5d4c62">A standard chevron = “leave this screen.” The progress bar fills the rest of the row; no icon doing double duty.</div>
+        </div>
+        <div style="background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 3px 0 #e8d5c4">
+          <div style="font-weight:700;font-size:15px;color:#ff5d8f;margin-bottom:4px">🦩 Mingo anchors the base</div>
+          <div style="font-size:14px;line-height:1.5;color:#5d4c62">Centre-bottom, filling the dead space. Feedback rises above him in a bubble; he shifts idle → party → droop with the answer.</div>
+        </div>
+        <div style="background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 3px 0 #e8d5c4">
+          <div style="font-weight:700;font-size:15px;color:#ff5d8f;margin-bottom:4px">↕ Fits small screens</div>
+          <div style="font-size:14px;line-height:1.5;color:#5d4c62">Everything between nav and Mingo is vertically centred and scales — on an SE-class phone it all fits, no scroll.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:26px;align-items:flex-end;flex-wrap:wrap;justify-content:center">
+
+        <!-- ===== PHONE 1 · ANSWERING (large) ===== -->
+        <div style="text-align:center;flex:none">
+          <div style="position:relative;width:300px;height:636px;border-radius:42px;background:#1d141f;padding:11px;box-shadow:0 18px 40px rgba(59,45,63,.28)">
+            <div style="position:absolute;top:20px;left:50%;transform:translateX(-50%);width:104px;height:22px;border-radius:999px;background:#1d141f;z-index:5"></div>
+            <div style="position:relative;width:100%;height:100%;border-radius:32px;overflow:hidden;background:radial-gradient(circle at 16% 8%, #ffe3ee 0%, transparent 46%), radial-gradient(circle at 86% 92%, #dff6ff 0%, transparent 46%), #fff7ed;display:flex;flex-direction:column;padding:46px 16px 16px">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:40px;height:40px;flex:none;border-radius:50%;background:#fff;box-shadow:0 2px 0 #e8d5c4;display:grid;place-items:center">
+                  <svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M15 5 L8 12 L15 19" stroke="#3b2d3f" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div style="flex:1;height:14px;border-radius:999px;background:#f3e3d3;overflow:hidden">
+                  <div style="height:100%;width:30%;border-radius:999px;background:linear-gradient(90deg,#ffd166,#06d6a0)"></div>
+                </div>
+              </div>
+              <div style="text-align:center;font-size:12px;color:#8a7a8f;font-weight:600;margin-top:10px">Level 1 · Home base</div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+                <div style="font-size:21px;font-weight:700;color:#3b2d3f;text-align:center;letter-spacing:-.01em">Which note was that?</div>
+                <button style="display:flex;align-items:center;gap:8px;border:none;background:#fff;border-radius:999px;padding:10px 18px;box-shadow:0 3px 0 #e8d5c4;font-family:inherit;font-weight:700;font-size:14px;color:#ff5d8f;cursor:pointer">▶ Play the note</button>
+                <div style="display:flex;gap:10px;justify-content:center">
+                  <button style="width:76px;height:76px;border:none;border-radius:18px;font-family:inherit;font-weight:700;color:#fff;background:#ff5d8f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;font-size:18px"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(255,255,255,.92)"><circle cx="12" cy="13" r="7"/></svg>Do<span style="font-size:10px;font-weight:500;opacity:.85">1</span></button>
+                  <button style="width:76px;height:76px;border:none;border-radius:18px;font-family:inherit;font-weight:700;color:#3b2d3f;background:#ffd166;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;font-size:18px"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(59,45,63,.8)"><rect x="3" y="10" width="18" height="6" rx="3"/></svg>Mi<span style="font-size:10px;font-weight:500;opacity:.85">3</span></button>
+                  <button style="width:76px;height:76px;border:none;border-radius:18px;font-family:inherit;font-weight:700;color:#fff;background:#4cc9f0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;font-size:18px"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(255,255,255,.92)"><rect x="9" y="3" width="6" height="18" rx="3"/></svg>Sol<span style="font-size:10px;font-weight:500;opacity:.85">5</span></button>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <div style="border:none;background:#fff;border-radius:999px;padding:9px 14px;box-shadow:0 2px 0 #e8d5c4;font-size:12.5px;font-weight:600;color:#5d4c62">🔁 Hear it again</div>
+                  <div style="border:none;background:#fff;border-radius:999px;padding:9px 14px;box-shadow:0 2px 0 #e8d5c4;font-size:12.5px;font-weight:600;color:#5d4c62">🏠 Hear home</div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <div style="position:relative;background:#fff;border-radius:16px;padding:9px 16px;box-shadow:0 3px 0 #e8d5c4;font-size:13px;font-weight:600;color:#8a7a8f">Tap the note you heard
+                  <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%) rotate(45deg);width:11px;height:11px;background:#fff"></div>
+                </div>
+                <div style="width:60px;height:74px;margin-top:4px">
+                  <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+                    <g style="transform-origin:50% 80%;animation:bob 3s ease-in-out infinite">
+                      <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                      <path d="M50 88 L58 96 L47 96" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                      <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+                      <ellipse cx="41" cy="72" rx="13" ry="9" fill="#ff87ad"/>
+                      <path d="M62 60 C70 52 74 40 68 28" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                      <circle cx="68" cy="20" r="9" fill="#ff5d8f"/>
+                      <polygon points="76,17 91,26 79,29" fill="#ffd166"/>
+                      <polygon points="91,26 85,23.5 83,28.5" fill="#3b2d3f"/>
+                      <circle cx="66" cy="17" r="2.8" fill="#3b2d3f"/>
+                      <circle cx="63" cy="23" r="2.2" fill="#ff87ad" opacity="0.9"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:12px">Listening · 390-class</div>
+        </div>
+
+        <!-- ===== PHONE 2 · CORRECT (large) ===== -->
+        <div style="text-align:center;flex:none">
+          <div style="position:relative;width:300px;height:636px;border-radius:42px;background:#1d141f;padding:11px;box-shadow:0 18px 40px rgba(59,45,63,.28)">
+            <div style="position:absolute;top:20px;left:50%;transform:translateX(-50%);width:104px;height:22px;border-radius:999px;background:#1d141f;z-index:5"></div>
+            <div style="position:relative;width:100%;height:100%;border-radius:32px;overflow:hidden;background:radial-gradient(circle at 16% 8%, #ffe3ee 0%, transparent 46%), radial-gradient(circle at 86% 92%, #dff6ff 0%, transparent 46%), #fff7ed;display:flex;flex-direction:column;padding:46px 16px 16px">
+              <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+                <sc-for list="{{ phoneConfetti }}" as="c" hint-placeholder-count="0">
+                  <div style="position:absolute;top:-20px;left:{{ c.left }}%;width:7px;height:10px;border-radius:2px;background:{{ c.color }};animation:confetti-fall {{ c.dur }}s linear {{ c.delay }}s infinite;opacity:.8"></div>
+                </sc-for>
+              </div>
+              <div style="position:relative;display:flex;align-items:center;gap:12px">
+                <div style="width:40px;height:40px;flex:none;border-radius:50%;background:#fff;box-shadow:0 2px 0 #e8d5c4;display:grid;place-items:center">
+                  <svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M15 5 L8 12 L15 19" stroke="#3b2d3f" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div style="flex:1;height:14px;border-radius:999px;background:#f3e3d3;overflow:hidden">
+                  <div style="height:100%;width:42%;border-radius:999px;background:linear-gradient(90deg,#ffd166,#06d6a0)"></div>
+                </div>
+              </div>
+              <div style="position:relative;text-align:center;font-size:12px;color:#8a7a8f;font-weight:600;margin-top:10px">Level 1 · Home base</div>
+              <div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+                <div style="font-size:21px;font-weight:700;color:#3b2d3f;text-align:center;letter-spacing:-.01em">Which note was that?</div>
+                <div style="display:flex;gap:10px;justify-content:center">
+                  <button style="width:76px;height:76px;border:none;border-radius:18px;font-family:inherit;font-weight:700;color:#fff;background:#ff5d8f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:18px;opacity:.45"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(255,255,255,.92)"><circle cx="12" cy="13" r="7"/></svg>Do<span style="font-size:10px;font-weight:500;opacity:.85">1</span></button>
+                  <button style="width:76px;height:76px;border:none;border-radius:18px;font-family:inherit;font-weight:700;color:#3b2d3f;background:#ffd166;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:18px;box-shadow:0 0 0 4px #06d6a0"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(59,45,63,.8)"><rect x="3" y="10" width="18" height="6" rx="3"/></svg>Mi<span style="font-size:10px;font-weight:500;opacity:.85">3</span></button>
+                  <button style="width:76px;height:76px;border:none;border-radius:18px;font-family:inherit;font-weight:700;color:#fff;background:#4cc9f0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:18px;opacity:.45"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:rgba(255,255,255,.92)"><rect x="9" y="3" width="6" height="18" rx="3"/></svg>Sol<span style="font-size:10px;font-weight:500;opacity:.85">5</span></button>
+                </div>
+                <div style="display:flex;gap:10px;align-items:baseline;font-weight:700;font-size:14px">
+                  <span style="color:#c4b2c9">Mi</span><span style="color:#c4b2c9">Re</span><span style="color:#ff5d8f;font-size:17px">Do</span>
+                </div>
+                <div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a7a8f;margin-top:-6px">↑ it walked home</div>
+              </div>
+              <div style="position:relative;display:flex;flex-direction:column;align-items:center">
+                <div style="position:relative;background:#d8f5ec;border-radius:16px;padding:10px 18px;box-shadow:0 3px 0 #b3e6d6;font-size:15px;font-weight:700;color:#04a47b">Yes! That was Mi 🎉
+                  <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%) rotate(45deg);width:11px;height:11px;background:#d8f5ec"></div>
+                </div>
+                <div style="width:64px;height:78px;margin-top:4px">
+                  <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+                    <g style="transform-origin:50% 80%;animation:party 0.7s ease-in-out infinite">
+                      <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                      <path d="M50 88 L61 90 L52 98" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                      <ellipse cx="48" cy="70" rx="26" ry="20" fill="#ff5d8f"/>
+                      <ellipse cx="41" cy="69" rx="13" ry="9" fill="#ff87ad" style="transform-origin:48px 72px;transform:rotate(-16deg)"/>
+                      <path d="M62 60 C70 50 74 38 68 26" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                      <circle cx="68" cy="18" r="9" fill="#ff5d8f"/>
+                      <polygon points="76,15 91,22 80,27" fill="#ffd166"/>
+                      <polygon points="91,22 85,20 84,25" fill="#3b2d3f"/>
+                      <path d="M63.4 14.6 q2.4 -3 4.8 0" stroke="#3b2d3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                      <circle cx="63" cy="21" r="2.4" fill="#ff87ad"/>
+                      <polygon points="60,6 76,6 68,-9" fill="#06d6a0"/>
+                      <circle cx="68" cy="-10" r="3" fill="#4cc9f0"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:12px">Correct · 390-class</div>
+        </div>
+
+        <!-- ===== PHONE 3 · GENTLE MISS (small SE) ===== -->
+        <div style="text-align:center;flex:none">
+          <div style="position:relative;width:248px;height:486px;border-radius:36px;background:#1d141f;padding:9px;box-shadow:0 18px 40px rgba(59,45,63,.28)">
+            <div style="position:relative;width:100%;height:100%;border-radius:28px;overflow:hidden;background:radial-gradient(circle at 16% 8%, #ffe3ee 0%, transparent 46%), radial-gradient(circle at 86% 92%, #dff6ff 0%, transparent 46%), #fff7ed;display:flex;flex-direction:column;padding:20px 13px 13px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;flex:none;border-radius:50%;background:#fff;box-shadow:0 2px 0 #e8d5c4;display:grid;place-items:center">
+                  <svg viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M15 5 L8 12 L15 19" stroke="#3b2d3f" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div style="flex:1;height:12px;border-radius:999px;background:#f3e3d3;overflow:hidden">
+                  <div style="height:100%;width:24%;border-radius:999px;background:linear-gradient(90deg,#ffd166,#06d6a0)"></div>
+                </div>
+              </div>
+              <div style="text-align:center;font-size:11px;color:#8a7a8f;font-weight:600;margin-top:8px">Level 1 · Home base</div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px">
+                <div style="font-size:18px;font-weight:700;color:#3b2d3f;text-align:center;letter-spacing:-.01em">Which note was that?</div>
+                <div style="display:flex;gap:8px;justify-content:center">
+                  <button style="width:62px;height:62px;border:none;border-radius:16px;font-family:inherit;font-weight:700;color:#fff;background:#ff5d8f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:15px;box-shadow:0 0 0 3px #06d6a0"><svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:rgba(255,255,255,.92)"><circle cx="12" cy="13" r="7"/></svg>Do<span style="font-size:9px;font-weight:500;opacity:.85">1</span></button>
+                  <button style="width:62px;height:62px;border:none;border-radius:16px;font-family:inherit;font-weight:700;color:#3b2d3f;background:#ffd166;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:15px;box-shadow:0 0 0 3px #ef476f"><svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:rgba(59,45,63,.8)"><rect x="3" y="10" width="18" height="6" rx="3"/></svg>Mi<span style="font-size:9px;font-weight:500;opacity:.85">3</span></button>
+                  <button style="width:62px;height:62px;border:none;border-radius:16px;font-family:inherit;font-weight:700;color:#fff;background:#4cc9f0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:15px;opacity:.45"><svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:rgba(255,255,255,.92)"><rect x="9" y="3" width="6" height="18" rx="3"/></svg>Sol<span style="font-size:9px;font-weight:500;opacity:.85">5</span></button>
+                </div>
+                <div style="display:flex;gap:8px;align-items:baseline;font-weight:700;font-size:12px">
+                  <span style="color:#c4b2c9">Mi</span><span style="color:#c4b2c9">Re</span><span style="color:#ff5d8f;font-size:15px">Do</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <div style="position:relative;background:#fde3e9;border-radius:14px;padding:8px 14px;box-shadow:0 3px 0 #f3c3cf;font-size:13px;font-weight:700;color:#c42e62">Almost — that was Do
+                  <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:#fde3e9"></div>
+                </div>
+                <div style="width:54px;height:66px;margin-top:4px">
+                  <svg viewBox="0 0 100 120" style="width:100%;height:100%;overflow:visible">
+                    <g style="transform-origin:50% 85%;animation:sadsway 2.6s ease-in-out infinite">
+                      <path d="M50 88 L50 110 M50 110 L43 114" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                      <path d="M50 88 L57 98 L47 99" stroke="#e8438a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                      <ellipse cx="48" cy="72" rx="26" ry="20" fill="#ff5d8f"/>
+                      <ellipse cx="42" cy="76" rx="13" ry="8" fill="#ff87ad"/>
+                      <path d="M62 62 C66 56 64 48 59 42" stroke="#ff5d8f" stroke-width="9" fill="none" stroke-linecap="round"/>
+                      <circle cx="58" cy="36" r="9" fill="#ff5d8f"/>
+                      <polygon points="55,42 50,55 60,48" fill="#ffd166"/>
+                      <polygon points="50,55 53,48 57,52" fill="#3b2d3f"/>
+                      <path d="M53 31 q2.5 -1.6 4.6 0" stroke="#3b2d3f" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                      <circle cx="56" cy="36" r="2.6" fill="#3b2d3f"/>
+                      <ellipse cx="51" cy="40" rx="2" ry="2.8" fill="#4cc9f0" style="transform-origin:51px 40px;animation:drip 1.8s ease-in-out infinite"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8a7a8f;margin-top:12px">Gentle miss · SE-class</div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <footer style="text-align:center;padding:36px 24px 12px">
+    <div style="font-size:28px;font-weight:700;letter-spacing:-.02em"><span style="color:#ff5d8f">DoReMi</span><span style="color:#3b2d3f">ngo</span></div>
+    <div style="font-family:'Space Mono',monospace;font-size:12px;color:#b39bbb;margin-top:8px">No lives · no fail states · just a happy flamingo. Made with ♥ for sharper ears.</div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1120},&quot;confettiOn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showSpecs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;iconShape&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Squircle&quot;,&quot;Circle&quot;,&quot;Rounded&quot;],&quot;default&quot;:&quot;Squircle&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const cols = ['#ff5d8f', '#ffd166', '#06d6a0', '#4cc9f0', '#c66cf6', '#f4845f'];
+    const gen = (n, span) => Array.from({ length: n }, (_, i) => ({
+      left: Math.round(((i * 6.7 + (i * i * 13) % 17) % 100)),
+      delay: ((i * 0.41) % span).toFixed(2),
+      dur: (3.0 + (i % 5) * 0.6).toFixed(2),
+      color: cols[i % cols.length],
+    }));
+    this.confetti = gen(18, 4);
+    this.phoneConfetti = gen(10, 3);
+    this.state = { mood: 'happy' };
+  }
+
+  renderVals() {
+    const moodAnim = {
+      idle: 'bob 3s ease-in-out infinite',
+      happy: 'hop 0.7s ease-out infinite',
+      party: 'party 0.7s ease-in-out infinite',
+      sad: 'sadsway 2.6s ease-in-out infinite',
+    };
+    const moods = ['idle', 'happy', 'party', 'sad'].map(k => {
+      const active = this.state.mood === k;
+      return {
+        key: k,
+        label: k[0].toUpperCase() + k.slice(1),
+        on: () => this.setState({ mood: k }),
+        style: 'font-family:inherit;font-size:14.5px;font-weight:700;padding:11px 20px;border:none;border-radius:999px;cursor:pointer;'
+          + (active
+            ? 'background:#ff5d8f;color:#fff;box-shadow:0 4px 0 #d2336a'
+            : 'background:#fff7ed;color:#5d4c62;box-shadow:0 4px 0 #e8d5c4'),
+      };
+    });
+
+    const badge = {
+      'AAA': { badgeBg: '#d8f5ec', badgeFg: '#04a47b' },
+      'AA': { badgeBg: '#d8f5ec', badgeFg: '#04a47b' },
+      'AA Large': { badgeBg: '#ffd166', badgeFg: '#3b2d3f' },
+      'Fail': { badgeBg: '#fde3e9', badgeFg: '#d2336a' },
+    };
+    const pairs = [
+      { fg: 'Plum Ink', fgHex: '#3b2d3f', bg: 'Cream', bgHex: '#fff7ed', ratio: '11.9', pass: 'AAA' },
+      { fg: 'Plum Ink', fgHex: '#3b2d3f', bg: 'White', bgHex: '#ffffff', ratio: '12.6', pass: 'AAA' },
+      { fg: 'Plum Ink', fgHex: '#3b2d3f', bg: 'Sunshine', bgHex: '#ffd166', ratio: '8.8', pass: 'AAA' },
+      { fg: 'Plum Ink', fgHex: '#3b2d3f', bg: 'Mint', bgHex: '#06d6a0', ratio: '6.7', pass: 'AAA' },
+      { fg: 'Plum Ink', fgHex: '#3b2d3f', bg: 'Sky', bgHex: '#4cc9f0', ratio: '6.6', pass: 'AAA' },
+      { fg: 'Berry', fgHex: '#c42e62', bg: 'Cream', bgHex: '#fff7ed', ratio: '5.0', pass: 'AA' },
+      { fg: 'Plum Ink', fgHex: '#3b2d3f', bg: 'Flamingo Pink', bgHex: '#ff5d8f', ratio: '4.4', pass: 'AA Large' },
+      { fg: 'Cream', fgHex: '#fff7ed', bg: 'Coral Red', bgHex: '#ef476f', ratio: '3.6', pass: 'AA Large' },
+      { fg: 'White', fgHex: '#ffffff', bg: 'Flamingo Pink', bgHex: '#ff5d8f', ratio: '2.9', pass: 'Fail' },
+    ].map(p => ({ ...p, ...badge[p.pass] }));
+
+    const radius = { 'Squircle': '26%', 'Circle': '50%', 'Rounded': '15%' }[this.props.iconShape ?? 'Squircle'] || '26%';
+
+    return {
+      confetti: (this.props.confettiOn ?? true) ? this.confetti : [],
+      phoneConfetti: (this.props.confettiOn ?? true) ? this.phoneConfetti : [],
+      showSpecs: this.props.showSpecs ?? true,
+      iconRadius: radius,
+      heroAnim: moodAnim[this.state.mood],
+      moods,
+      pairs,
+      voice: [
+        { t: 'Warm', d: 'Talk like an encouraging friend, never a teacher grading you.' },
+        { t: 'Playful', d: 'Bright, light, a little silly — Mingo is having a genuinely nice time.' },
+        { t: 'No-fail', d: 'Wrong answers teach, never punish. No lives, no red X shaming.' },
+        { t: 'Plain', d: 'Degrees, not jargon. "Re leans down" beats "supertonic tendency."' },
+      ],
+      sayList: ['Nice — that was Re.', 'Let\u2019s hear home again.', 'Your ear is getting sharper.', 'Almost! Re leans down to Do.'],
+      avoidList: ['Wrong.', 'You failed. Try again.', 'Incorrect answer.', 'That note was a C\u266f.'],
+      core: [
+        { name: 'Cream', hex: '#fff7ed', role: 'Background' },
+        { name: 'Plum Ink', hex: '#3b2d3f', role: 'Primary text' },
+        { name: 'Flamingo Pink', hex: '#ff5d8f', role: 'Brand / primary' },
+        { name: 'Sunshine', hex: '#ffd166', role: 'Beak / highlight' },
+        { name: 'Mint', hex: '#06d6a0', role: 'Correct / go' },
+        { name: 'Sky', hex: '#4cc9f0', role: 'Cool accent' },
+        { name: 'Coral Red', hex: '#ef476f', role: 'Gentle "oops"' },
+      ],
+      degrees: [
+        { name: 'Do', hex: '#ff5d8f', fg: '#fff' },
+        { name: 'Re', hex: '#f4845f', fg: '#fff' },
+        { name: 'Mi', hex: '#ffd166', fg: '#3b2d3f' },
+        { name: 'Fa', hex: '#06d6a0', fg: '#fff' },
+        { name: 'Sol', hex: '#4cc9f0', fg: '#fff' },
+        { name: 'La', hex: '#7b6cf6', fg: '#fff' },
+        { name: 'Ti', hex: '#c66cf6', fg: '#fff' },
+      ],
+      typeScale: [
+        { spec: 'Display · 56 / 700', size: 50, weight: 700, sample: 'DoReMingo' },
+        { spec: 'H1 · 40 / 700', size: 38, weight: 700, sample: 'Meet Re' },
+        { spec: 'H2 · 28 / 600', size: 27, weight: 600, sample: 'How it works' },
+        { spec: 'Lead · 20 / 500', size: 20, weight: 500, sample: 'Hear a note. Feel where it lives.' },
+        { spec: 'Body · 17 / 400', size: 17, weight: 400, sample: 'One mystery note plays — say which it was.' },
+        { spec: 'Label · 15 / 700', size: 15, weight: 700, sample: 'Hear it again' },
+        { spec: 'Caption · 13 / 500', size: 13, weight: 500, sample: 'Keys 1\u20137 answer · space replays' },
+      ],
+      iconSizes: [
+        { px: 96, r: '24px', label: '1024 px' },
+        { px: 60, r: '15px', label: '180 px' },
+        { px: 40, r: '10px', label: '64 px' },
+        { px: 32, r: '8px', label: '32 px' },
+        { px: 16, r: '4px', label: '16 px' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

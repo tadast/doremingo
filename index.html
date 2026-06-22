@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>DoReMingo — ear training game: learn to recognise notes by ear</title>
   <meta name="description" content="A free, cheerful browser game that teaches you to recognise musical notes by ear. Based on functional ear training (Kodály movable-do) — no musical education needed, works on phones.">
   <link rel="canonical" href="https://www.codeme.lt/doremingo/">
@@ -11,7 +11,8 @@
   <meta property="og:description" content="A free ear-training game grounded in real music pedagogy. Hear a note, feel where it lives. Twelve levels from your first Do to melodies in any key.">
   <meta property="og:url" content="https://www.codeme.lt/doremingo/">
   <meta name="twitter:card" content="summary">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦩</text></svg>">
+  <link rel="icon" href="assets/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/favicon.svg">
   <link rel="stylesheet" href="css/style.css">
   <script type="application/ld+json">
   {
@@ -30,14 +31,31 @@
 <body>
   <main id="app">
     <section id="home-screen" class="screen">
+      <button id="menu-btn" class="menu-btn" aria-label="menu" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </button>
+      <nav id="menu-popover" class="menu-popover" hidden>
+        <button id="menu-tutorial" class="menu-item"><span class="menu-icon">🎓</span>Tutorial</button>
+        <button id="menu-how" class="menu-item"><span class="menu-icon">📖</span>How it works</button>
+        <button id="menu-notes" class="menu-item"><span class="menu-icon">🎵</span>Note reference</button>
+        <button id="menu-reset" class="menu-item danger"><span class="menu-icon">♻️</span>Reset progress</button>
+      </nav>
       <div id="home-mascot" class="mascot mascot-lg"></div>
-      <h1>DoReMingo</h1>
+      <h1 class="wordmark"><span class="wm-solfege">DoReMi</span><span class="wm-ngo">ngo</span></h1>
       <p class="tagline">Hear a note. Feel where it lives.</p>
       <p id="journey" class="status"></p>
       <div id="level-list" class="level-list"></div>
-      <button id="tutorial-btn" class="big-btn secondary">How it works 🎓</button>
       <p id="load-status" class="status" hidden>Warming up the piano…</p>
 
+      <p id="version-tag" class="footer"></p>
+    </section>
+
+    <section id="about-screen" class="screen" hidden>
+      <header class="quiz-header">
+        <button id="about-back-btn" class="back-btn" aria-label="back to level map">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
       <article class="about">
         <h2>What is DoReMingo?</h2>
         <p>DoReMingo is a free ear-training game that teaches you to recognise musical notes by ear — the skill behind playing songs without sheet music, improvising, and singing in tune. No musical education needed: the game explains everything as you go, and it works right in your browser, on your phone or computer.</p>
@@ -49,11 +67,25 @@
         <p>DoReMingo is built on <strong>functional ear training</strong> — the Kodály movable-do tradition used in real music education. Instead of memorising pitch names (near-impossible for adults) or drilling abstract intervals, you learn how each note <em>feels</em> relative to the key: Re leans down, Ti pulls up, Do rests. That relative skill transfers directly to real music in any key — exactly how experienced musicians hear.</p>
         <p>And because practice only works if you come back: no lives, no fail states, no punishments. Wrong answers teach you the same way right ones do. Just a happy flamingo, bright colours, and your ear getting sharper one note at a time.</p>
       </article>
+    </section>
 
-      <p class="footer"><a href="https://github.com/tadast/doremingo">source code</a></p>
+    <section id="notes-screen" class="screen" hidden>
+      <header class="quiz-header">
+        <button id="notes-back-btn" class="back-btn" aria-label="back to level map">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <h2 class="notes-title">The notes 🎵</h2>
+      <p class="tagline">Tap a note to hear it — or walk it home.</p>
+      <div id="notes-list" class="notes-list"></div>
     </section>
 
     <section id="theory-screen" class="screen" hidden>
+      <header class="quiz-header">
+        <button id="theory-back-btn" class="back-btn" aria-label="back to level map">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
       <h2 id="theory-title"></h2>
       <div id="theory-body" class="theory-body"></div>
       <button id="theory-next-btn" class="big-btn">Let’s play</button>
@@ -69,26 +101,32 @@
       <p id="meet-help" class="meet-help" hidden></p>
     </section>
 
-    <section id="quiz-screen" class="screen" hidden>
+    <section id="quiz-screen" class="screen quiz-screen" hidden>
       <header class="quiz-header">
-        <button id="home-btn" class="icon-btn" aria-label="back to level map">🗺️</button>
+        <button id="home-btn" class="back-btn" aria-label="back to level map">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <div class="bar-track" aria-label="level progress">
           <div id="bar-fill" class="bar-fill"></div>
         </div>
       </header>
       <p id="level-title" class="status"></p>
-      <p id="prompt" class="prompt">Listen…</p>
-      <div id="answer-slots" class="slots" hidden></div>
-      <div id="degree-buttons" class="degrees"></div>
-      <p id="walk" class="walk" aria-label="resolution walk"></p>
-      <div class="replays">
-        <button id="replay-note-btn" class="chip-btn" disabled>🔁 Hear it again</button>
-        <button id="replay-cadence-btn" class="chip-btn" disabled>🏠 Hear home</button>
-        <button id="backspace-btn" class="chip-btn" hidden>⌫ Undo</button>
+
+      <div class="quiz-main">
+        <p id="prompt" class="prompt">Listen…</p>
+        <div id="answer-slots" class="slots" hidden></div>
+        <div id="degree-buttons" class="degrees"></div>
+        <p id="walk" class="walk" aria-label="resolution walk"></p>
+        <div class="replays">
+          <button id="replay-note-btn" class="chip-btn" disabled>🔁 Hear it again</button>
+          <button id="replay-cadence-btn" class="chip-btn" disabled>🏠 Hear home</button>
+          <button id="backspace-btn" class="chip-btn" hidden>⌫ Undo</button>
+        </div>
       </div>
-      <div class="feedback-row">
-        <div id="quiz-mascot" class="mascot mascot-sm"></div>
+
+      <div class="mascot-stage">
         <p id="feedback" class="feedback"></p>
+        <div id="quiz-mascot" class="mascot mascot-sm"></div>
       </div>
       <p class="status kbd-hint">Keys: 1–7 answer · space replays · C plays home</p>
     </section>
@@ -101,6 +139,7 @@
       <button id="map-btn" class="big-btn secondary">Level map</button>
     </section>
   </main>
+  <button id="load-error" class="load-error" hidden></button>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
