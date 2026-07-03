@@ -42,15 +42,27 @@
 [hidden] { display: none !important; }
 
 html {
+  /* pink underlay = webview's first paint before <body> renders, so the
+     native launch screen → content handoff never flashes the WKWebView's
+     default background. Body's own bg paints over this immediately. */
+  background: #ff5d8f;
   /* native-app feel: no text scaling, no rubber-band scroll on the page */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   overscroll-behavior: none;
+  /* contain the header's 100vw full-bleed band — no stray horizontal scrollbar */
+  overflow-x: clip;
 }
+
+/* First paint eases up from the dark-pink launch/underlay into the lighter app
+   bg, instead of snapping. Body starts transparent (pink shows through) and
+   fades to opaque on its single render. */
+@keyframes app-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 body {
   margin: 0;
   font-family: var(--font-brand);
+  animation: app-fade-in 0.45s ease-out both;
   background:
     radial-gradient(circle at 15% 20%, #ffe3ee 0%, transparent 45%),
     radial-gradient(circle at 85% 80%, #dff6ff 0%, transparent 45%),
@@ -204,7 +216,11 @@ h1 {
   padding: 8px;
   cursor: pointer;
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
 }
+.level-card .book-btn svg { width: 22px; height: 22px; display: block; }
 
 /* Nav header pins to the top while the screen scrolls. Full-bleed (negative
    margins cancel the screen's padding) so its backdrop spans edge-to-edge, with
@@ -226,7 +242,21 @@ h1 {
            max(24px, env(safe-area-inset-right))
            20px
            max(24px, env(safe-area-inset-left));
+}
+/* Full-bleed backdrop: spans the whole viewport width, not just the centred
+   480px column, so it never leaves a vertical seam on wide screens (iPad/desktop).
+   Content stays in-column; only the fading band breaks out. */
+.quiz-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
   background: linear-gradient(var(--bg) 60%, transparent);
+  z-index: -1;
+  pointer-events: none;
 }
 .quiz-header .bar-track { flex: 1; }
 
@@ -238,6 +268,16 @@ h1 {
   align-self: start;
   min-height: 100dvh;
 }
+
+/* Same as .quiz-screen: column fills the viewport so Mingo anchors at the
+   bottom (margin-top:auto on the mascot stage) instead of floating mid-screen. */
+#daily-screen {
+  align-self: start;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+#daily-mascot-stage { margin-top: auto; }
 
 /* Level view fills the viewport: nav at top, question/answers centred in the
    thumb zone, Mingo anchored at the bottom talking up through a bubble. */
@@ -259,14 +299,16 @@ h1 {
 .quiz-main .replays { margin: 0; }
 
 .mascot-stage {
+  position: relative; /* anchor for the absolutely-placed speech bubble */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end; /* Mingo pinned to the bottom… */
   gap: 4px;
   margin-top: 8px;
-  /* …with fixed reserved space above so the speech bubble appearing/clearing
-     never shifts the centred question or moves Mingo. */
+  /* …with fixed reserved space above. The bubble is taken out of flow (absolute)
+     so however many lines it grows to, it never shifts the centred question or
+     moves Mingo. */
   min-height: 150px;
 }
 
@@ -305,6 +347,7 @@ h1 {
 body.scrolled #home-screen::before { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   #home-screen::before { transition: none; }
+  body { animation: none; }
 }
 
 /* Burger menu — top-right of the home screen */
@@ -329,6 +372,14 @@ body.scrolled #home-screen::before { opacity: 1; }
 .menu-btn svg { width: 24px; height: 24px; display: block; }
 .menu-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #e8d5c4; }
 
+/* Back-to-modes button on the Learn map — mirrors the burger, top-left. */
+.home-back-btn {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left), calc((100vw - 480px) / 2 + 16px));
+  z-index: 10;
+}
+
 .menu-popover {
   position: fixed;
   top: max(64px, calc(env(safe-area-inset-top) + 48px));
@@ -343,24 +394,35 @@ body.scrolled #home-screen::before { opacity: 1; }
   min-width: 190px;
   text-align: left;
   transform-origin: top right;
-  animation: menu-wobble-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  /* iOS-style spring: scale from the anchor corner, slight overshoot, no rotation */
+  animation: menu-pop-in 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
-.menu-popover.closing { animation: menu-wobble-out 0.26s ease-in forwards; }
+.menu-popover.closing { animation: menu-pop-out 0.18s ease-in forwards; }
 
-@keyframes menu-wobble-in {
-  0%   { opacity: 0; transform: scale(0.5) rotate(-7deg); }
-  55%  { opacity: 1; transform: scale(1.06) rotate(4deg); }
-  72%  { transform: scale(0.97) rotate(-2.5deg); }
-  86%  { transform: scale(1.02) rotate(1deg); }
-  100% { transform: scale(1) rotate(0); }
+@keyframes menu-pop-in {
+  0%   { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
 }
-@keyframes menu-wobble-out {
-  0%   { opacity: 1; transform: scale(1) rotate(0); }
-  35%  { transform: scale(1.05) rotate(-3deg); }
-  100% { opacity: 0; transform: scale(0.5) rotate(6deg); }
+@keyframes menu-pop-out {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
 }
+
+/* Backdrop dim behind the open menu (UIMenu-style) */
+.menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  background: rgba(59, 45, 63, 0.18);
+  animation: scrim-in 0.2s ease both;
+}
+.menu-scrim.closing { animation: scrim-out 0.18s ease forwards; }
+@keyframes scrim-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scrim-out { from { opacity: 1; } to { opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
-  .menu-popover, .menu-popover.closing { animation: none; }
+  .menu-popover, .menu-popover.closing,
+  .menu-scrim, .menu-scrim.closing { animation: none; }
 }
 
 .menu-item {
@@ -379,7 +441,8 @@ body.scrolled #home-screen::before { opacity: 1; }
 }
 .menu-item:active { background: #faf0e6; }
 .menu-item.danger { color: var(--pink); }
-.menu-icon { font-size: 1.15rem; width: 1.4em; text-align: center; flex: none; }
+.menu-icon { width: 24px; flex: none; display: grid; place-items: center; }
+.menu-icon svg { width: 22px; height: 22px; display: block; }
 
 /* Notes reference — squircle + blurb per named note */
 .notes-title { color: var(--pink); margin: 0 0 4px; }
@@ -464,6 +527,10 @@ body.scrolled #home-screen::before { opacity: 1; }
 }
 .walk-note { transition: transform 0.15s, color 0.15s; }
 .walk-note.lit { color: var(--pink); transform: scale(1.3); }
+/* Notes outside the button octave (e.g. the high Do you walk up to) read as a
+   tinted variant so the prime/comma mark isn't the only cue. */
+.walk-note-octave { color: var(--blue); font-style: italic; }
+.walk-note-octave.lit { color: var(--blue); transform: scale(1.3); }
 @media (prefers-reduced-motion: reduce) {
   .walk-note.lit { transform: none; }
 }
@@ -618,8 +685,15 @@ body.scrolled #home-screen::before { opacity: 1; }
 /* Mingo's speech bubble — rises above him, with a little downward tail.
    Hidden when empty so he stands alone while the player listens. */
 .feedback {
-  position: relative;
+  /* Out of flow, bottom-anchored just above Mingo, so it grows upward as lines
+     are added without ever pushing siblings. drop-shadow (vs box-shadow) wraps
+     the whole silhouette — bubble + tail — so the tail carries the shadow too. */
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
+  width: max-content;
   max-width: 100%;
   font-size: 1.05rem;
   font-weight: 700;
@@ -630,21 +704,21 @@ body.scrolled #home-screen::before { opacity: 1; }
   color: var(--ink);
   border-radius: 16px;
   padding: 12px 18px;
-  box-shadow: 0 3px 0 #e8d5c4;
+  filter: drop-shadow(0 3px 0 #e8d5c4);
 }
 .feedback:empty { display: none; }
 .feedback::after {
   content: "";
   position: absolute;
-  bottom: -5px;
+  bottom: -6px;
   left: 50%;
-  width: 11px;
-  height: 11px;
+  width: 14px;
+  height: 14px;
   transform: translateX(-50%) rotate(45deg);
   background: inherit;
 }
-.feedback.good { color: #04a47b; background: #d8f5ec; box-shadow: 0 3px 0 #b3e6d6; }
-.feedback.bad { color: var(--berry); background: #fde3e9; box-shadow: 0 3px 0 #f3c3cf; }
+.feedback.good { color: #04a47b; background: #d8f5ec; filter: drop-shadow(0 3px 0 #b3e6d6); }
+.feedback.bad { color: var(--berry); background: #fde3e9; filter: drop-shadow(0 3px 0 #f3c3cf); }
 
 /* ---------- mascot ---------- */
 
@@ -744,3 +818,193 @@ body.scrolled #home-screen::before { opacity: 1; }
   .confetti-piece { display: none; }
   .bar-fill { transition: none; }
 }
+
+/* ---------- Daily mode ---------- */
+
+/* Centre the title block across the full width; the back button floats over the
+   left so it doesn't shove the title off-centre. Extra vertical padding keeps the
+   header from crowding the top edge / notch. */
+#daily-screen .quiz-header {
+  justify-content: center;
+  padding-top: max(44px, calc(env(safe-area-inset-top) + 24px));
+  padding-bottom: 26px;
+}
+#daily-screen #daily-back-btn {
+  position: absolute;
+  left: max(24px, env(safe-area-inset-left));
+  top: 50%;
+  transform: translateY(-50%);
+}
+#daily-screen .daily-help-btn {
+  position: absolute;
+  right: max(24px, env(safe-area-inset-right));
+  top: 50%;
+  transform: translateY(-50%);
+}
+#daily-screen .daily-help-btn:active { transform: translateY(-50%) translateY(2px); }
+.daily-headline {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; line-height: 1.15;
+}
+.daily-title { font-family: var(--font-brand); font-weight: 700; font-size: 1.2rem; }
+.daily-sub { font-size: 0.8rem; opacity: 0.7; }
+
+.daily-play { display: flex; justify-content: center; margin: 0.25rem 0 1.5rem; }
+.daily-play .big-btn { margin-top: 0; padding: 0.6rem 1.2rem; font-size: 1rem; }
+/* Spent its turn's replay: clearly inert until the next Guess re-enables it. */
+.daily-play .big-btn:disabled {
+  opacity: 0.4; cursor: default; transform: none; box-shadow: 0 2px 0 #d23369;
+}
+
+.daily-board {
+  display: flex; flex-direction: column; gap: 6px;
+  align-items: center; margin: 0.5rem 0 1rem;
+}
+.daily-lane { display: flex; gap: 6px; justify-content: center; }
+.daily-cell {
+  position: relative;
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-brand); font-weight: 700; font-size: 0.9rem;
+  background: #fff; color: var(--ink);
+  box-shadow: inset 0 0 0 2px rgba(59, 45, 63, 0.14);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.daily-cell.filled { box-shadow: inset 0 0 0 2px var(--blue); transform: scale(1.04); }
+.daily-cell.green { background: var(--green); color: #06382c; box-shadow: none; }
+.daily-cell.yellow { background: var(--yellow); color: var(--ink); box-shadow: none; }
+.daily-cell.grey { background: #cdbfd0; color: #5a4a5e; box-shadow: none; }
+/* Non-colour cue so green (right spot) and yellow (right note, wrong spot) stay
+   distinguishable for colourblind players, and on the text-less recap grid:
+   a solid corner pip = exact, a hollow ring = present. */
+.daily-cell.green::after,
+.daily-cell.yellow::after {
+  content: ""; position: absolute; top: 4px; right: 4px;
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.daily-cell.green::after { background: #06382c; }
+.daily-cell.yellow::after { box-shadow: inset 0 0 0 2px #7a5b00; }
+.daily-board.recap .daily-cell.green::after,
+.daily-board.recap .daily-cell.yellow::after { top: 3px; right: 3px; width: 7px; height: 7px; }
+
+/* On the result screen the board is a recap, not a play surface — text-less but
+   sized to fill the available width so it doesn't read as cramped. Cells scale
+   with the viewport (clamped) and the gap scales with them. */
+.daily-board.recap { gap: clamp(5px, 1.6vw, 9px); margin: 0.35rem 0 0.75rem; }
+.daily-board.recap .daily-lane { gap: clamp(5px, 1.6vw, 9px); }
+.daily-board.recap .daily-cell {
+  width: clamp(34px, 9vw, 52px); height: clamp(34px, 9vw, 52px);
+  border-radius: 10px; font-size: 0;
+}
+
+.daily-palette { margin-top: 0.25rem; }
+/* A Degree proven absent from the tune is greyed and locked out of the palette. */
+.daily-palette .degree-btn.absent {
+  background: #cdbfd0; color: #6e5f72;
+  opacity: 0.55; box-shadow: none;
+}
+.daily-palette .degree-btn.absent .sign { color: #6e5f72; }
+
+/* Results: one centred, width-capped column so figures + chart line up. */
+.daily-result {
+  text-align: center; display: flex; flex-direction: column; align-items: stretch;
+  gap: 0.5rem; width: 100%; max-width: 360px; margin: 0 auto;
+}
+.daily-result h2 { font-family: var(--font-brand); margin: 0.1rem 0; font-size: 1.5rem; }
+.daily-reveal { font-weight: 600; color: var(--berry); margin: 0; }
+.daily-result .big-btn { margin: 0.6rem auto 0; }
+
+/* Web daily-only flavor (www.doremingo.com/daily): nudge to the full game. */
+.daily-upsell {
+  display: block;
+  margin-top: 0.9rem;
+  font-size: 0.95rem;
+  color: var(--berry);
+}
+
+.daily-stats { width: 100%; }
+.stat-figures { display: flex; justify-content: space-between; gap: 0.4rem; margin: 0.2rem 0 0.7rem; }
+.stat-figures span { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.stat-figures b { font-size: 1.35rem; font-family: var(--font-brand); line-height: 1.1; }
+.stat-figures small { font-size: 0.66rem; opacity: 0.65; margin-top: 0.1rem; }
+.dist-title { font-size: 0.78rem; opacity: 0.7; margin: 0.2rem 0; text-align: left; }
+.dist { display: flex; flex-direction: column; gap: 4px; }
+.dist-row { display: flex; align-items: center; gap: 6px; }
+.dist-label { width: 1ch; font-family: var(--font-mono); font-size: 0.8rem; opacity: 0.7; }
+.dist-bar {
+  background: #cdbfd0; color: #fff; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700;
+  padding: 1px 6px; text-align: right; min-width: 1ch;
+}
+.dist-bar.hot { background: var(--green); color: #06382c; }
+
+#daily-countdown { font-family: var(--font-mono); font-size: 0.85rem; opacity: 0.8; }
+
+/* ---------- bottom tab bar — the three top-level Modes ---------- */
+/* iOS-style persistent tab bar. Shown only on the mode roots (Learn map +
+   Daily board); JS toggles [hidden] via syncTabBar(). Fixed to the bottom,
+   full-bleed, honouring the home-indicator inset. */
+.tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px max(8px, env(safe-area-inset-right))
+           max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  background: linear-gradient(to top, var(--bg) 72%, transparent);
+}
+.tab-btn {
+  flex: 1 1 0;
+  max-width: 140px;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  color: #9a8b9e; /* resting: muted plum */
+  cursor: pointer;
+  border-radius: 14px;
+  font-family: var(--font-brand);
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.tab-btn .tab-icon { width: 24px; height: 24px; display: block; }
+.tab-btn .tab-label { font-size: 0.72rem; font-weight: 700; }
+.tab-btn:active { transform: scale(0.94); }
+.tab-btn.active { color: var(--berry); background: #ffe6ee; }
+
+/* Keep home-screen content clear of the fixed bar. */
+#home-screen {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+/* ---------- Daily "how to play" modal ---------- */
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(59, 45, 63, 0.45);
+}
+.help-overlay[hidden] { display: none; }
+.help-dialog {
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(59, 45, 63, 0.28);
+  text-align: left;
+}
+.help-dialog h2 { margin: 0 0 12px; color: var(--pink); font-size: 1.3rem; }
+.help-dialog p { margin: 0 0 12px; line-height: 1.45; font-size: 0.95rem; }
+.help-dialog .big-btn { margin-top: 4px; width: 100%; }

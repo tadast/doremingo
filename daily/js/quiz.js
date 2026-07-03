@@ -3,13 +3,17 @@
 export const BAR_GAIN = 1;
 export const BAR_DRAIN = 0.5;
 
-export function createBar(size = 15, value = 0) {
-  return { size, value: Math.min(Math.max(value, 0), size) };
+// A Bar carries its own drain rule, so the same engine clears both a Learn
+// Level (a wrong answer drains slightly) and a Warmup Stage (a wrong answer
+// resets the streak to zero). `drain: Infinity` means "reset on miss".
+export function createBar(size = 15, value = 0, { drain = BAR_DRAIN } = {}) {
+  return { size, value: Math.min(Math.max(value, 0), size), drain };
 }
 
 export function applyAnswer(bar, correct) {
-  const delta = correct ? BAR_GAIN : -BAR_DRAIN;
-  return createBar(bar.size, bar.value + delta);
+  if (correct) return createBar(bar.size, bar.value + BAR_GAIN, { drain: bar.drain });
+  if (bar.drain === Infinity) return createBar(bar.size, 0, { drain: bar.drain });
+  return createBar(bar.size, bar.value - bar.drain, { drain: bar.drain });
 }
 
 export function isFull(bar) {

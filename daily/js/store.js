@@ -1,5 +1,7 @@
 // Progress store — versioned persistence, storage injectable for tests.
 
+import { defaultDaily } from './daily/stats.js';
+
 const KEY = 'doremingo';
 const VERSION = 1;
 
@@ -12,6 +14,7 @@ export function defaultState() {
     tutorialDone: false,
     metNotes: [], // degrees already introduced via Meet-the-Note
     seenTheory: [], // level ids whose explainer auto-showed already
+    daily: defaultDaily(), // Daily mode stats + today's lock (see daily/stats.js)
   };
 }
 

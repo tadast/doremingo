@@ -129,6 +129,7 @@ export class Round {
     const asked = this.session.currentDegree;
     this.bar = applyAnswer(this.bar, correct);
     this.view.renderBar(this.bar.value, this.bar.size);
+    this.lastAnswerCorrect = correct; // for onPersist hooks (e.g. Warmup) to read
     this.onPersist();
 
     if (correct) { this.streak += 1; this.missStreak = 0; }

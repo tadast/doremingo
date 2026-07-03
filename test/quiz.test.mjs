@@ -29,3 +29,22 @@ test('createBar clamps initial values into range', () => {
   assert.equal(createBar(10, -4).value, 0);
   assert.equal(createBar(10, 99).value, 10);
 });
+
+test('default bar drains by 0.5 on a miss', () => {
+  const bar = createBar(15, 5);
+  assert.equal(applyAnswer(bar, false).value, 4.5);
+});
+
+test('a streak Bar (drain: Infinity) resets to 0 on a miss', () => {
+  let bar = createBar(3, 0, { drain: Infinity });
+  bar = applyAnswer(applyAnswer(bar, true), true);
+  assert.equal(bar.value, 2);
+  bar = applyAnswer(bar, false);
+  assert.equal(bar.value, 0);
+});
+
+test('drain rule survives applyAnswer', () => {
+  let bar = createBar(3, 0, { drain: Infinity });
+  bar = applyAnswer(bar, true);
+  assert.equal(bar.drain, Infinity);
+});

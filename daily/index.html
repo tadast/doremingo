@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>DoReMingo — ear training game: learn to recognise notes by ear</title>
+  <meta name="description" content="A free, cheerful browser game that teaches you to recognise musical notes by ear. Based on functional ear training (Kodály movable-do) — no musical education needed, works on phones.">
+  <link rel="canonical" href="https://www.doremingo.com/daily/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DoReMingo — learn to hear notes 🦩">
+  <meta property="og:description" content="A free ear-training game grounded in real music pedagogy. Hear a note, feel where it lives. Twelve levels from your first Do to melodies in any key.">
+  <meta property="og:url" content="https://www.doremingo.com/daily/">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="assets/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ff5d8f">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "DoReMingo",
+    "url": "https://www.doremingo.com/daily/",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Any (web browser)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "description": "A free browser game that trains your ear to recognise musical notes, based on functional ear training (Kodály movable-do solfège).",
+    "genre": "Educational, Music"
+  }
+  </script>
+</head>
+<body>
+  <main id="app">
+    <section id="home-screen" class="screen">
+      <button id="menu-btn" class="menu-btn" aria-label="More options" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>
+      <div id="menu-scrim" class="menu-scrim" hidden></div>
+      <nav id="menu-popover" class="menu-popover" hidden>
+        <button id="menu-tutorial" class="menu-item"><span class="menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-4 9 4-9 4-9-4z"/><path d="M7 11.2v3.3c0 1.2 2.2 2.2 5 2.2s5-1 5-2.2v-3.3"/><path d="M21 9v4"/></svg></span>Tutorial</button>
+        <button id="menu-how" class="menu-item"><span class="menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg></span>How it works</button>
+        <button id="menu-notes" class="menu-item"><span class="menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><ellipse cx="6.5" cy="17" rx="2.5" ry="2"/><ellipse cx="16.5" cy="15" rx="2.5" ry="2"/></svg></span>Note reference</button>
+        <a id="menu-contact" class="menu-item" href="mailto:doremingo@okdo.co.uk"><span class="menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>Contact</a>
+        <button id="menu-reset" class="menu-item danger"><span class="menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 13a7.5 7.5 0 1 1-1.8-5.6"/><path d="M18 3v5h-5"/></svg></span>Reset progress</button>
+      </nav>
+      <div id="home-mascot" class="mascot mascot-lg"></div>
+      <h1 class="wordmark"><span class="wm-solfege">DoReMi</span><span class="wm-ngo">ngo</span></h1>
+      <p class="tagline">Hear a note. Feel where it lives.</p>
+      <p id="journey" class="status"></p>
+      <div id="level-list" class="level-list"></div>
+      <p id="load-status" class="status" hidden>Warming up the piano…</p>
+      <p id="warmup-status" class="status" hidden>Warming up the piano…</p>
+
+      <p id="version-tag" class="footer"></p>
+    </section>
+
+    <section id="about-screen" class="screen" hidden>
+      <header class="quiz-header">
+        <button id="about-back-btn" class="back-btn" aria-label="back to all levels">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <article class="about">
+        <h2>What is DoReMingo?</h2>
+        <p>DoReMingo is a free ear-training game that teaches you to recognise musical notes by ear — the skill behind playing songs without sheet music, improvising, and singing in tune. No musical education needed: the game explains everything as you go, and it works right in your browser, on your phone or computer.</p>
+
+        <h2>How does it work?</h2>
+        <p>Each round, a short chord pattern shows your ear where <em>home</em> is — the key. Then one mystery note plays, and you say which note it was: Do, Re, Mi and friends. After every answer, the note audibly walks back home step by step, so your ear learns the note's character whether you guessed right or not. Levels start with just three notes and grow gently to every note, minor keys, changing keys and short melodies.</p>
+
+        <h2>The philosophy</h2>
+        <p>DoReMingo is built on <strong>functional ear training</strong> — the Kodály movable-do tradition used in real music education. Instead of memorising pitch names (near-impossible for adults) or drilling abstract intervals, you learn how each note <em>feels</em> relative to the key: Re leans down, Ti pulls up, Do rests. That relative skill transfers directly to real music in any key — exactly how experienced musicians hear.</p>
+        <p>And because practice only works if you come back: no lives, no fail states, no punishments. Wrong answers teach you the same way right ones do. Just a happy flamingo, bright colours, and your ear getting sharper one note at a time.</p>
+      </article>
+    </section>
+
+    <section id="notes-screen" class="screen" hidden>
+      <header class="quiz-header">
+        <button id="notes-back-btn" class="back-btn" aria-label="back to all levels">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <h2 class="notes-title">The notes 🎵</h2>
+      <p class="tagline">Tap a note to hear it — or walk it home.</p>
+      <div id="notes-list" class="notes-list"></div>
+    </section>
+
+    <section id="theory-screen" class="screen" hidden>
+      <header class="quiz-header">
+        <button id="theory-back-btn" class="back-btn" aria-label="back to all levels">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      <h2 id="theory-title"></h2>
+      <div id="theory-body" class="theory-body"></div>
+      <button id="theory-next-btn" class="big-btn">Let’s play</button>
+    </section>
+
+    <section id="meet-screen" class="screen" hidden>
+      <h2 id="meet-title"></h2>
+      <p id="meet-body" class="tagline"></p>
+      <div id="meet-stage" class="degrees"></div>
+      <p id="meet-walk" class="walk" aria-label="resolution walk"></p>
+      <button id="meet-next-btn" class="big-btn">Next</button>
+      <button id="meet-skip-btn" class="big-btn secondary">Skip</button>
+      <p id="meet-help" class="meet-help" hidden></p>
+    </section>
+
+    <section id="quiz-screen" class="screen quiz-screen" hidden>
+      <header class="quiz-header">
+        <button id="home-btn" class="back-btn" aria-label="back to all levels">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="bar-track" aria-label="level progress">
+          <div id="bar-fill" class="bar-fill"></div>
+        </div>
+      </header>
+      <p id="level-title" class="status"></p>
+
+      <div class="quiz-main">
+        <p id="prompt" class="prompt">Listen…</p>
+        <div id="answer-slots" class="slots" hidden></div>
+        <div id="degree-buttons" class="degrees"></div>
+        <p id="walk" class="walk" aria-label="resolution walk"></p>
+        <div class="replays">
+          <button id="replay-note-btn" class="chip-btn" disabled>🔁 Hear it again</button>
+          <button id="replay-cadence-btn" class="chip-btn" disabled>🏠 Hear home</button>
+          <button id="backspace-btn" class="chip-btn" hidden>⌫ Undo</button>
+        </div>
+      </div>
+
+      <div class="mascot-stage">
+        <p id="feedback" class="feedback" aria-live="polite"></p>
+        <div id="quiz-mascot" class="mascot mascot-sm"></div>
+      </div>
+      <p class="status kbd-hint">Keys: 1–7 answer · space replays · C plays home</p>
+    </section>
+
+    <section id="daily-screen" class="screen" hidden>
+      <header class="quiz-header">
+        <button id="daily-back-btn" class="back-btn" aria-label="leave the daily puzzle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="daily-headline">
+          <span id="daily-title" class="daily-title">Daily</span>
+          <span id="daily-sub" class="daily-sub"></span>
+        </div>
+        <button id="daily-help-btn" class="menu-btn daily-help-btn" aria-label="How to play">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>
+        </button>
+      </header>
+
+      <div id="daily-help-dialog" class="help-overlay" hidden>
+        <div class="help-dialog" role="dialog" aria-modal="true" aria-label="How to play Daily">
+          <h2>How to play Daily</h2>
+          <p>One shared puzzle a day. A hidden tune plays — echo it back by tapping the notes (Do, Re, Mi…), one per slot.</p>
+          <p>Each guess is scored note by note: a <b>solid dot</b> means the right note in the right spot; a <b>hollow ring</b> means it's in the tune but in another spot; plain means it's not in the tune (its button greys out).</p>
+          <p>You get a few guesses. Run out and the tune is revealed — no losing, just learning. Come back tomorrow for a new one.</p>
+          <button id="daily-help-close" class="big-btn">Got it</button>
+        </div>
+      </div>
+
+      <p id="daily-status" class="status" hidden>Warming up the piano…</p>
+
+      <div id="daily-play" class="daily-play">
+        <button id="daily-play-btn" class="big-btn">🔁 Hear it again</button>
+      </div>
+
+      <div id="daily-board" class="daily-board" aria-label="your guesses"></div>
+
+      <div id="daily-degree-buttons" class="degrees daily-palette"></div>
+
+      <div id="daily-mascot-stage" class="mascot-stage">
+        <p id="daily-feedback" class="feedback" aria-live="polite"></p>
+        <div id="daily-mascot" class="mascot mascot-sm"></div>
+      </div>
+
+      <div id="daily-result" class="daily-result" hidden>
+        <h2 id="daily-result-title"></h2>
+        <p id="daily-reveal" class="daily-reveal" hidden></p>
+        <div id="daily-stats" class="daily-stats"></div>
+        <button id="daily-share-btn" class="big-btn">Share result</button>
+        <p id="daily-share-status" class="status" aria-live="polite"></p>
+        <p id="daily-countdown" class="status"></p>
+      </div>
+    </section>
+
+    <section id="clear-screen" class="screen" hidden>
+      <div id="clear-mascot" class="mascot mascot-lg party"></div>
+      <h1 id="clear-title">Level cleared! 🎉</h1>
+      <p id="clear-message" class="tagline">Your ear is getting sharper. 🦩</p>
+      <button id="next-level-btn" class="big-btn">Next level</button>
+      <button id="map-btn" class="big-btn secondary">All levels</button>
+    </section>
+  </main>
+
+  <nav id="tabbar" class="tabbar" aria-label="Modes" hidden>
+    <button id="tab-learn" class="tab-btn" type="button">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-4 9 4-9 4-9-4z"/><path d="M7 11.2v3.3c0 1.2 2.2 2.2 5 2.2s5-1 5-2.2v-3.3"/><path d="M21 9v4"/></svg>
+      <span class="tab-label">Learn</span>
+    </button>
+    <button id="tab-daily" class="tab-btn" type="button">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/><path d="M12 13.5h.01"/></svg>
+      <span class="tab-label">Daily</span>
+    </button>
+    <button id="tab-warmup" class="tab-btn" type="button">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 13 2.5-7H21"/></svg>
+      <span class="tab-label">Warmup</span>
+    </button>
+  </nav>
+
+  <button id="load-error" class="load-error" hidden></button>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

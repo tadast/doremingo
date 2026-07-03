@@ -1,0 +1,230 @@
+/* DoReMingo landing — brand tokens from docs/brand-brief.md, same as the game. */
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('fonts/quicksand-latin-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Mono';
+  src: url('fonts/spacemono-700-latin.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --bg: #fff7ed;
+  --ink: #3b2d3f;
+  --pink: #ff5d8f;
+  --pink-deep: #e64980;
+  --yellow: #ffd166;
+  --green: #06d6a0;
+  --blue: #4cc9f0;
+  --berry: #c42e62; /* AA-safe pink for small text */
+  --grey-tile: #e9dfd2;
+  --font-brand: 'Quicksand', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-brand);
+  color: var(--ink);
+  background:
+    radial-gradient(60vmax 60vmax at 8% -10%, #ffe3ee 0%, transparent 60%),
+    radial-gradient(70vmax 70vmax at 105% 110%, #dff6ff 0%, transparent 60%),
+    var(--bg);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { color: var(--berry); }
+
+main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ---- top bar ---- */
+.top {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+.brand img { border-radius: 9px; }
+
+/* ---- pills (the game's physical buttons) ---- */
+.pill {
+  display: inline-block;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 0 var(--pink-deep);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.pill:hover { transform: translateY(1px); box-shadow: 0 3px 0 var(--pink-deep); }
+.pill:active { transform: translateY(4px); box-shadow: 0 0 0 var(--pink-deep); }
+.pill:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.pill-small { padding: 0.5rem 1.1rem; font-size: 0.9rem; white-space: nowrap; }
+.pill-big { padding: 0.9rem 1.9rem; font-size: 1.15rem; margin-top: 1.75rem; }
+
+/* ---- hero ---- */
+.hero { text-align: center; padding: 2.5rem 0 3.5rem; }
+
+.hero h1 {
+  font-size: clamp(2rem, 7.5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.hero .tagline {
+  margin: 1.1rem auto 0;
+  max-width: 46ch;
+  font-size: clamp(1rem, 3.5vw, 1.15rem);
+  opacity: 0.88;
+}
+
+/* ---- the share card — the thing people actually post ---- */
+.share-card {
+  margin: 2.75rem auto 0;
+  width: fit-content;
+  padding: 1.1rem 1.6rem 1.3rem;
+  background: #fff;
+  border-radius: 22px;
+  border-bottom-right-radius: 6px; /* message-bubble tail corner */
+  box-shadow: 0 10px 30px rgba(59, 45, 63, 0.12);
+  rotate: -2deg;
+}
+
+.share-line {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  margin-bottom: 0.7rem;
+  text-align: left;
+}
+
+.grid { display: grid; gap: 6px; }
+.row { display: flex; gap: 6px; }
+
+.tile {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.tile.green { background: var(--green); }
+.tile.yellow { background: var(--yellow); }
+.tile.grey { background: var(--grey-tile); }
+
+/* stagger: tiles pop in reading order */
+.row:nth-child(1) .tile:nth-child(1) { animation-delay: 0.10s; }
+.row:nth-child(1) .tile:nth-child(2) { animation-delay: 0.16s; }
+.row:nth-child(1) .tile:nth-child(3) { animation-delay: 0.22s; }
+.row:nth-child(1) .tile:nth-child(4) { animation-delay: 0.28s; }
+.row:nth-child(1) .tile:nth-child(5) { animation-delay: 0.34s; }
+.row:nth-child(2) .tile:nth-child(1) { animation-delay: 0.46s; }
+.row:nth-child(2) .tile:nth-child(2) { animation-delay: 0.52s; }
+.row:nth-child(2) .tile:nth-child(3) { animation-delay: 0.58s; }
+.row:nth-child(2) .tile:nth-child(4) { animation-delay: 0.64s; }
+.row:nth-child(2) .tile:nth-child(5) { animation-delay: 0.70s; }
+.row:nth-child(3) .tile:nth-child(1) { animation-delay: 0.82s; }
+.row:nth-child(3) .tile:nth-child(2) { animation-delay: 0.88s; }
+.row:nth-child(3) .tile:nth-child(3) { animation-delay: 0.94s; }
+.row:nth-child(3) .tile:nth-child(4) { animation-delay: 1.00s; }
+.row:nth-child(3) .tile:nth-child(5) { animation-delay: 1.06s; }
+
+@keyframes pop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile { animation: none; }
+  .pill { transition: none; }
+}
+
+/* ---- sections ---- */
+section { padding-bottom: 3rem; }
+h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+
+/* ---- how it works ---- */
+.steps { list-style: none; display: grid; gap: 1.1rem; }
+.steps li { display: flex; gap: 0.9rem; align-items: flex-start; }
+
+.note-pill {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: 0 3px 0 rgba(59, 45, 63, 0.18);
+}
+.np-blue { background: var(--blue); }
+.np-yellow { background: var(--yellow); }
+.np-green { background: var(--green); }
+
+.how-note { margin-top: 1.1rem; font-size: 0.95rem; opacity: 0.8; }
+
+/* ---- app upsell ---- */
+.app {
+  background: #fff;
+  border-radius: 22px;
+  padding: 1.75rem 1.6rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 10px 30px rgba(59, 45, 63, 0.08);
+}
+.app h2 { margin-bottom: 0.6rem; }
+.app-list { list-style: none; margin: 1rem 0 1.4rem; display: grid; gap: 0.5rem; }
+
+.badge {
+  display: inline-block;
+  padding: 0.65rem 1.4rem;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.badge .sub { display: block; font-weight: 500; font-size: 0.75rem; opacity: 0.9; margin-top: 0.1rem; }
+
+/* ---- footer ---- */
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.8rem;
+  opacity: 0.65;
+}
+footer a { color: inherit; }
+
+/* ---- privacy doc ---- */
+.doc { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 3rem; width: 100%; flex: 1; }
+.doc .brand { margin-bottom: 2rem; }
+.doc h1 { font-size: 1.9rem; margin-bottom: 0.25rem; }
+.doc .updated { color: var(--berry); font-size: 0.85rem; margin-bottom: 1.75rem; }
+.doc h2 { font-size: 1.2rem; margin: 1.75rem 0 0.5rem; }
+.doc p, .doc li { margin-bottom: 0.75rem; }
+.doc ul { padding-left: 1.4rem; }
+.doc .back { display: inline-block; margin-top: 2rem; font-size: 0.9rem; }

@@ -2,11 +2,11 @@
 
 A cheerful browser game that trains your ear to recognise notes — no musical education required.
 
-**Play it: <https://www.codeme.lt/doremingo/>**
+**Play the daily puzzle: <https://www.doremingo.com/daily/>** · full game coming to the App Store
 
 Grounded in functional ear training (Kodály movable-do tradition): a cadence establishes the key, you identify the scale degree (Do, Re, Mi…), and every answer ends with the note walking home to Do. Twelve levels from the tonic triad to chromatic colour notes, minor mode, random keys and short melodies. Progress saves in your browser.
 
-Share a level directly: <https://www.codeme.lt/doremingo/#/level/5> · tutorial: <https://www.codeme.lt/doremingo/#/tutorial>
+The web deploy at doremingo.com serves the Daily only — Learn and Warmup ship in the app. Hash routes (`#/level/5`, `#/tutorial`, …) still work when serving the repo root locally.
 
 ## Development
 

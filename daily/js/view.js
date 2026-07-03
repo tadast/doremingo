@@ -55,18 +55,24 @@ export function createGameView(el) {
     gap = 0.05,
   } = {}) {
     const stepMs = (noteDuration + gap) * 1000;
+    // The degree buttons live in one octave. A walk that climbs past Ti lands on
+    // Do an octave up — a pitch with no button in view. Mark such notes (a prime
+    // per octave above, a comma per octave below) and skip the wrong-octave glow.
+    const octaveOf = (midi) => Math.floor((midi - walkTonic) / 12);
     const spans = midis.map((midi) => {
       const key = midiToDegree(walkTonic, midi, walkMode);
+      const oct = octaveOf(midi);
       const span = document.createElement('span');
-      span.className = 'walk-note';
-      span.textContent = key === null ? '·' : degreeInfo(key, walkMode).name;
+      span.className = oct === 0 ? 'walk-note' : 'walk-note walk-note-octave';
+      const mark = oct > 0 ? '′'.repeat(oct) : ','.repeat(-oct);
+      span.textContent = key === null ? '·' : degreeInfo(key, walkMode).name + mark;
       return span;
     });
     walkEl.replaceChildren(...spans);
 
     midis.forEach((midi, i) => {
       const key = midiToDegree(walkTonic, midi, walkMode);
-      const btn = withButtons && key !== null
+      const btn = withButtons && key !== null && octaveOf(midi) === 0
         ? el.degrees.querySelector(`[data-degree="${key}"]`)
         : null;
       highlightTimeouts.push(setTimeout(() => {

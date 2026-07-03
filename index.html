@@ -2,144 +2,137 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>DoReMingo — ear training game: learn to recognise notes by ear</title>
-  <meta name="description" content="A free, cheerful browser game that teaches you to recognise musical notes by ear. Based on functional ear training (Kodály movable-do) — no musical education needed, works on phones.">
-  <link rel="canonical" href="https://www.codeme.lt/doremingo/">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DoReMingo — daily melody puzzle &amp; ear training game</title>
+  <meta name="description" content="DoReMingo is a free daily music puzzle. Hear a hidden melody, echo it back in Do-Re-Mi, share your grid. One tune a day, same for everyone — play free in your browser, no sign-up.">
+  <link rel="canonical" href="https://www.doremingo.com/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="DoReMingo — learn to hear notes 🦩">
-  <meta property="og:description" content="A free ear-training game grounded in real music pedagogy. Hear a note, feel where it lives. Twelve levels from your first Do to melodies in any key.">
-  <meta property="og:url" content="https://www.codeme.lt/doremingo/">
+  <meta property="og:site_name" content="DoReMingo">
+  <meta property="og:title" content="DoReMingo — can you echo today's melody?">
+  <meta property="og:description" content="A free daily music puzzle. Hear a tune, play it back by ear in Do-Re-Mi, share your grid. New melody at midnight.">
+  <meta property="og:url" content="https://www.doremingo.com/">
   <meta name="twitter:card" content="summary">
-  <link rel="icon" href="assets/favicon.svg">
-  <link rel="apple-touch-icon" href="assets/favicon.svg">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="flamingo.svg">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <meta name="theme-color" content="#fff7ed">
+  <link rel="stylesheet" href="style.css">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "DoReMingo",
-    "url": "https://www.codeme.lt/doremingo/",
-    "applicationCategory": "GameApplication",
-    "operatingSystem": "Any (web browser)",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "description": "A free browser game that trains your ear to recognise musical notes, based on functional ear training (Kodály movable-do solfège).",
-    "genre": "Educational, Music"
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://www.doremingo.com/#website",
+        "url": "https://www.doremingo.com/",
+        "name": "DoReMingo",
+        "publisher": { "@id": "https://www.doremingo.com/#org" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://www.doremingo.com/#org",
+        "name": "OK Do! Ltd",
+        "url": "https://www.okdo.co.uk/",
+        "email": "hello@okdo.co.uk"
+      },
+      {
+        "@type": "WebApplication",
+        "name": "DoReMingo Daily",
+        "url": "https://www.doremingo.com/daily/",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any (web browser)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "A free daily music puzzle: hear a hidden melody and echo it back in Do-Re-Mi solfège. One shared puzzle a day, Wordle-style spoiler-free sharing.",
+        "genre": "Educational, Music",
+        "publisher": { "@id": "https://www.doremingo.com/#org" }
+      }
+    ]
   }
   </script>
 </head>
 <body>
-  <main id="app">
-    <section id="home-screen" class="screen">
-      <button id="menu-btn" class="menu-btn" aria-label="menu" aria-haspopup="true" aria-expanded="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-      </button>
-      <nav id="menu-popover" class="menu-popover" hidden>
-        <button id="menu-tutorial" class="menu-item"><span class="menu-icon">🎓</span>Tutorial</button>
-        <button id="menu-how" class="menu-item"><span class="menu-icon">📖</span>How it works</button>
-        <button id="menu-notes" class="menu-item"><span class="menu-icon">🎵</span>Note reference</button>
-        <button id="menu-reset" class="menu-item danger"><span class="menu-icon">♻️</span>Reset progress</button>
-      </nav>
-      <div id="home-mascot" class="mascot mascot-lg"></div>
-      <h1 class="wordmark"><span class="wm-solfege">DoReMi</span><span class="wm-ngo">ngo</span></h1>
-      <p class="tagline">Hear a note. Feel where it lives.</p>
-      <p id="journey" class="status"></p>
-      <div id="level-list" class="level-list"></div>
-      <p id="load-status" class="status" hidden>Warming up the piano…</p>
 
-      <p id="version-tag" class="footer"></p>
-    </section>
+  <header class="top">
+    <a class="brand" href="/">
+      <img src="flamingo.svg" alt="" width="40" height="40">
+      <span>DoReMingo</span>
+    </a>
+    <a class="pill pill-small" href="/daily/">Play today's melody</a>
+  </header>
 
-    <section id="about-screen" class="screen" hidden>
-      <header class="quiz-header">
-        <button id="about-back-btn" class="back-btn" aria-label="back to level map">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </header>
-      <article class="about">
-        <h2>What is DoReMingo?</h2>
-        <p>DoReMingo is a free ear-training game that teaches you to recognise musical notes by ear — the skill behind playing songs without sheet music, improvising, and singing in tune. No musical education needed: the game explains everything as you go, and it works right in your browser, on your phone or computer.</p>
+  <main>
+    <section class="hero">
+      <h1>One little melody a&nbsp;day.<br>Echo it by ear.</h1>
+      <p class="tagline">
+        DoReMingo is a free daily music puzzle. Listen to a hidden tune, play it
+        back in Do&#8209;Re&#8209;Mi, and share your grid — spoiler-free. Same melody for
+        everyone, new one at midnight. No sign-up, no music training needed.
+      </p>
+      <a class="pill pill-big" href="/daily/">▶&nbsp; Play today's Daily — free</a>
 
-        <h2>How does it work?</h2>
-        <p>Each round, a short chord pattern shows your ear where <em>home</em> is — the key. Then one mystery note plays, and you say which note it was: Do, Re, Mi and friends. After every answer, the note audibly walks back home step by step, so your ear learns the note's character whether you guessed right or not. Levels start with just three notes and grow gently to every note, minor keys, changing keys and short melodies.</p>
-
-        <h2>The philosophy</h2>
-        <p>DoReMingo is built on <strong>functional ear training</strong> — the Kodály movable-do tradition used in real music education. Instead of memorising pitch names (near-impossible for adults) or drilling abstract intervals, you learn how each note <em>feels</em> relative to the key: Re leans down, Ti pulls up, Do rests. That relative skill transfers directly to real music in any key — exactly how experienced musicians hear.</p>
-        <p>And because practice only works if you come back: no lives, no fail states, no punishments. Wrong answers teach you the same way right ones do. Just a happy flamingo, bright colours, and your ear getting sharper one note at a time.</p>
-      </article>
-    </section>
-
-    <section id="notes-screen" class="screen" hidden>
-      <header class="quiz-header">
-        <button id="notes-back-btn" class="back-btn" aria-label="back to level map">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </header>
-      <h2 class="notes-title">The notes 🎵</h2>
-      <p class="tagline">Tap a note to hear it — or walk it home.</p>
-      <div id="notes-list" class="notes-list"></div>
-    </section>
-
-    <section id="theory-screen" class="screen" hidden>
-      <header class="quiz-header">
-        <button id="theory-back-btn" class="back-btn" aria-label="back to level map">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </header>
-      <h2 id="theory-title"></h2>
-      <div id="theory-body" class="theory-body"></div>
-      <button id="theory-next-btn" class="big-btn">Let’s play</button>
-    </section>
-
-    <section id="meet-screen" class="screen" hidden>
-      <h2 id="meet-title"></h2>
-      <p id="meet-body" class="tagline"></p>
-      <div id="meet-stage" class="degrees"></div>
-      <p id="meet-walk" class="walk" aria-label="resolution walk"></p>
-      <button id="meet-next-btn" class="big-btn">Next</button>
-      <button id="meet-skip-btn" class="big-btn secondary">Skip</button>
-      <p id="meet-help" class="meet-help" hidden></p>
-    </section>
-
-    <section id="quiz-screen" class="screen quiz-screen" hidden>
-      <header class="quiz-header">
-        <button id="home-btn" class="back-btn" aria-label="back to level map">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <div class="bar-track" aria-label="level progress">
-          <div id="bar-fill" class="bar-fill"></div>
+      <figure class="share-card" aria-hidden="true">
+        <figcaption class="share-line">DoReMingo Daily #4&ensp;3/5</figcaption>
+        <div class="grid">
+          <div class="row">
+            <span class="tile grey"></span><span class="tile yellow"></span><span class="tile grey"></span><span class="tile green"></span><span class="tile grey"></span>
+          </div>
+          <div class="row">
+            <span class="tile green"></span><span class="tile yellow"></span><span class="tile grey"></span><span class="tile green"></span><span class="tile yellow"></span>
+          </div>
+          <div class="row">
+            <span class="tile green"></span><span class="tile green"></span><span class="tile green"></span><span class="tile green"></span><span class="tile green"></span>
+          </div>
         </div>
-      </header>
-      <p id="level-title" class="status"></p>
-
-      <div class="quiz-main">
-        <p id="prompt" class="prompt">Listen…</p>
-        <div id="answer-slots" class="slots" hidden></div>
-        <div id="degree-buttons" class="degrees"></div>
-        <p id="walk" class="walk" aria-label="resolution walk"></p>
-        <div class="replays">
-          <button id="replay-note-btn" class="chip-btn" disabled>🔁 Hear it again</button>
-          <button id="replay-cadence-btn" class="chip-btn" disabled>🏠 Hear home</button>
-          <button id="backspace-btn" class="chip-btn" hidden>⌫ Undo</button>
-        </div>
-      </div>
-
-      <div class="mascot-stage">
-        <p id="feedback" class="feedback"></p>
-        <div id="quiz-mascot" class="mascot mascot-sm"></div>
-      </div>
-      <p class="status kbd-hint">Keys: 1–7 answer · space replays · C plays home</p>
+      </figure>
     </section>
 
-    <section id="clear-screen" class="screen" hidden>
-      <div id="clear-mascot" class="mascot mascot-lg party"></div>
-      <h1>Level cleared! 🎉</h1>
-      <p id="clear-message" class="tagline">Your ear is getting sharper. 🦩</p>
-      <button id="next-level-btn" class="big-btn">Next level</button>
-      <button id="map-btn" class="big-btn secondary">Level map</button>
+    <section class="how">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li>
+          <span class="note-pill np-blue">Do</span>
+          <div><strong>Listen.</strong> A short melody plays, hidden behind the
+          board. Hear it again as often as you like.</div>
+        </li>
+        <li>
+          <span class="note-pill np-yellow">Re</span>
+          <div><strong>Echo it.</strong> Tap the notes you heard in Do&#8209;Re&#8209;Mi.
+          Green means right note, right spot; yellow means it's in the tune,
+          wrong spot.</div>
+        </li>
+        <li>
+          <span class="note-pill np-green">Mi</span>
+          <div><strong>Share your grid.</strong> The coloured squares show how
+          you did without giving the tune away. Can your friends beat it?</div>
+        </li>
+      </ol>
+      <p class="how-note">Run out of guesses? The melody is revealed and played
+      for you — every puzzle teaches your ear something.</p>
+    </section>
+
+    <section class="app">
+      <h2>The Daily is just the warm-up</h2>
+      <p>
+        The DoReMingo app has the whole journey: <strong>twelve Learn levels</strong>
+        that take you from your very first Do to hearing melodies in any key, and a
+        quick <strong>Warmup</strong> to tune your ear before the Daily. It's real
+        ear training (Kodály movable-do) dressed up as a game — no fail states,
+        works offline, collects no data.
+      </p>
+      <ul class="app-list">
+        <li>🎧 Learn — 12 levels, from the tonic triad to chromatic notes and new keys</li>
+        <li>🔥 Daily — keep your streak and stats on your phone</li>
+        <li>🌤️ Warmup — a two-minute pentatonic ear-tune</li>
+      </ul>
+      <span class="badge">Coming soon <span class="sub">to the App&nbsp;Store for&nbsp;iPhone&nbsp;&amp;&nbsp;iPad</span></span>
     </section>
   </main>
-  <button id="load-error" class="load-error" hidden></button>
-  <script type="module" src="js/main.js"></script>
+
+  <footer>
+    <a href="/daily/">Play the Daily</a> ·
+    <a href="/privacy-policy/">Privacy policy</a> ·
+    <a href="https://www.okdo.co.uk/doremingo/support/">Support</a><br>
+    made by <a href="https://www.okdo.co.uk">OK Do! Ltd</a>
+  </footer>
+
 </body>
 </html>

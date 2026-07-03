@@ -27,7 +27,7 @@ export function tutorialSteps() {
     {
       title: 'Welcome to DoReMingo! 🦩',
       body: 'You’ll learn to recognise notes by how they feel inside music. No experience needed — just your ears.',
-      nextLabel: 'Start',
+      nextLabel: 'Start Tutorial',
       initAudio: true,
     },
     {
@@ -35,7 +35,7 @@ export function tutorialSteps() {
       body: 'Every piece of music has a key — a home base. This little chord pattern is how DoReMingo shows your ear where home is. It plays before each question.',
       sound: 'cadence',
       nextLabel: 'I heard it!',
-      helpHtml: 'Don’t hear anything? Check your volume and the silent switch — still nothing? <a href="https://github.com/tadast/doremingo/issues/new?template=no-sound.yml" target="_blank" rel="noopener">Tell us what happened</a> so we can fix it.',
+      helpHtml: 'Don’t hear anything? Turn up your volume and check the silent switch on the side of your device.',
     },
     { title: 'Meet Do', body: MEET_BLURBS[1], stage: 1 },
     { title: 'Meet Mi', body: MEET_BLURBS[3], stage: 3, resolve: true },

@@ -14,6 +14,7 @@ export const SUCCESS_2 = [
   'Pink-credible. Absolutely pink-credible.',
   'Clean catch.',
   'Do is for done. Flawless.',
+  'Why watch cartoons when you can hear tunes?',
 ];
 
 export const STREAK_3PLUS = [
