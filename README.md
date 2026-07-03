@@ -26,4 +26,4 @@ Domain language lives in [CONTEXT.md](CONTEXT.md); the methodology decision is r
 
 ## Credits
 
-Piano samples from the [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm (CC-BY 3.0), via the [Tone.js audio collection](https://tonejs.github.io/audio/salamander/).
+Piano samples from the [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm (CC-BY 3.0), via the [Tone.js audio collection](https://github.com/Tonejs/audio/tree/master/salamander).
