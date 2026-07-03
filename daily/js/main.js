@@ -12,7 +12,10 @@ import { Store } from './store.js';
 import { createDurableStorage } from './durable-storage.js';
 import { LEVELS, getLevel } from './levels.js';
 import { createDaily } from './daily/ui.js';
-import { defaultDaily } from './daily/stats.js';
+import { defaultDaily, isPlayed } from './daily/stats.js';
+import { dayNumber } from './daily/schedule.js';
+import { maybeRequestReview } from './growth/review.js';
+import { offerNotifications, syncNotifications, toggleNotifications } from './growth/notifications.js';
 import { THEORY } from './content.js';
 import { FLAMINGO } from './art.js';
 import { VERSION } from './version.js';
@@ -126,6 +129,17 @@ const dailyDevOpts = (() => {
   return {};
 })();
 
+// Growth hooks after a finished daily (iOS app only; both no-op on web).
+// Delayed so the celebration / result view lands first — the reminder offer
+// and the review sheet should read as a postscript, not an interruption.
+function onDailyFinished() {
+  setTimeout(async () => {
+    await offerNotifications({ state, store });
+    await syncNotifications({ state, store, playedToday: true });
+    await maybeRequestReview({ state, store });
+  }, 2000);
+}
+
 // Daily mode runs its own controller (its own brain + DOM), like a mini-app.
 const daily = createDaily({
   piano,
@@ -134,6 +148,7 @@ const daily = createDaily({
   showScreen,
   goHome: goLearn, // Daily's exit now lands on the Learn root (tab bar handles modes)
   celebrate,
+  onFinished: onDailyFinished,
   ...dailyDevOpts,
 });
 
@@ -833,6 +848,27 @@ function resetProgress(back) {
 }
 
 // Burger menu — lives on the Learn map, so its pages return there.
+// Daily reminders toggle — iOS app only (on-device local notifications; the
+// menu item stays hidden on web, where there is nothing to schedule).
+const remindersBtn = document.getElementById('menu-reminders');
+const remindersLabel = document.getElementById('menu-reminders-label');
+const playedTodayNow = () => isPlayed(state.daily, dayNumber(new Date()));
+const renderRemindersItem = () => {
+  remindersLabel.textContent = `Daily reminder: ${state.growth?.notify === true ? 'on' : 'off'}`;
+};
+if (globalThis.Capacitor?.isNativePlatform?.()) {
+  remindersBtn.hidden = false;
+  renderRemindersItem();
+  remindersBtn.addEventListener('click', async () => {
+    burger.close();
+    await toggleNotifications({ state, store, playedToday: playedTodayNow() });
+    renderRemindersItem();
+  });
+  // Reschedule on every launch — reboots and timezone changes drift schedules,
+  // and this also clears a stale streak-risk if today is already played.
+  syncNotifications({ state, playedToday: playedTodayNow() });
+}
+
 el.menuTutorial.addEventListener('click', () => { burger.close(); startTutorial(); });
 el.menuHow.addEventListener('click', () => { burger.close(); pageReturn = goLearn; openAbout(); });
 el.menuNotes.addEventListener('click', () => { burger.close(); pageReturn = goLearn; openNotes(); });

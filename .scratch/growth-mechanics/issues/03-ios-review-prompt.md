@@ -1,6 +1,6 @@
 # 03 — iOS review prompt at delight moments
 
-Status: ready-for-agent
+Status: done
 
 ## What to build
 
@@ -32,3 +32,12 @@ Note for iOS build: plugin install requires `npm i` + `npx cap sync`; keep
 ## Blocked by
 
 None - can start immediately.
+
+## Comments
+
+Done 2026-07-03. Pure rule + Capacitor adapter in `js/growth/review.js`
+(plugin `@capacitor-community/in-app-review`, installed + synced). Trigger:
+3rd solved daily or 7-day streak, solved days only, once per app version
+(persisted in new `state.growth` block), fired 2s after the daily result so
+the celebration lands first. Unit-tested with a fake bridge (rule + adapter +
+web no-op). Real-device verification pending — needs a build on hardware.

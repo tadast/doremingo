@@ -15,6 +15,9 @@ export function defaultState() {
     metNotes: [], // degrees already introduced via Meet-the-Note
     seenTheory: [], // level ids whose explainer auto-showed already
     daily: defaultDaily(), // Daily mode stats + today's lock (see daily/stats.js)
+    // Growth prompts (iOS app only): review ask + reminder opt-in choice.
+    // notify: null = never offered, false = declined, true = reminders on.
+    growth: { reviewPromptedVersion: null, notify: null },
   };
 }
 

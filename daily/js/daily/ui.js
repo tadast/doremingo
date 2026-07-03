@@ -20,7 +20,7 @@ import { defaultDaily, recordResult, isPlayed, winPercent } from './stats.js';
 
 const degName = (d, mode) => degreeInfo(d, mode).name;
 
-export function createDaily({ piano, store, getState, showScreen, goHome, celebrate, now = () => new Date() }) {
+export function createDaily({ piano, store, getState, showScreen, goHome, celebrate, onFinished, now = () => new Date() }) {
   const $ = (id) => document.getElementById(id);
   const el = {
     screen: $('daily-screen'),
@@ -221,6 +221,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
         rows: result.rows,
       });
       store.save(state);
+      onFinished?.(); // growth hooks (review ask, reminders) — fire-and-forget
     }
     // A solve earns the level-clear celebration screen first, then the recap.
     // A soft-fail goes straight to the result (which reveals + plays the tune).

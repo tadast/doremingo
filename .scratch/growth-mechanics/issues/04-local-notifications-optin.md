@@ -1,6 +1,6 @@
 # 04 — Opt-in local notifications (daily-ready + streak-at-risk)
 
-Status: ready-for-agent
+Status: done
 
 ## What to build
 
@@ -35,3 +35,16 @@ had a cultural moment; competitor Functional Ear Trainer ships daily reminders.
 ## Blocked by
 
 None - can start immediately.
+
+## Comments
+
+Done 2026-07-03. Pure planner + Capacitor adapter in
+`js/growth/notifications.js` (plugin `@capacitor/local-notifications`,
+installed + synced). Offer fires once after the 2nd completed daily
+(confirm dialog → OS permission); choice persisted in `state.growth.notify`
+(null/false/true). Daily-ready repeats 09:00 local; streak-at-risk one-shot
+19:00 only when streak ≥2 and today unplayed, cleared on completion. Full
+cancel+reschedule sync on every app launch and daily finish (handles
+reboots/timezone drift). Burger-menu toggle "Daily reminder: on/off", visible
+only in the native app. Planner, sync, offer, denial paths unit-tested with a
+fake bridge. Real-device verification pending — needs a build on hardware.
