@@ -849,7 +849,13 @@ body.scrolled #home-screen::before { opacity: 1; }
 .daily-title { font-family: var(--font-brand); font-weight: 700; font-size: 1.2rem; }
 .daily-sub { font-size: 0.8rem; opacity: 0.7; }
 
-.daily-play { display: flex; justify-content: center; margin: 0.25rem 0 1.5rem; }
+/* The status line narrates playback (home → tune). Keep its slot reserved even
+   when hidden so appearing/disappearing text never shifts the grid below. */
+#daily-status { min-height: 1.5em; margin: 0; }
+/* !important to out-rank the global `[hidden] { display: none !important }`. */
+#daily-status[hidden] { display: block !important; visibility: hidden; }
+
+.daily-play { display: flex; justify-content: center; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0.25rem 0 1.5rem; }
 .daily-play .big-btn { margin-top: 0; padding: 0.6rem 1.2rem; font-size: 1rem; }
 /* Spent its turn's replay: clearly inert until the next Guess re-enables it. */
 .daily-play .big-btn:disabled {

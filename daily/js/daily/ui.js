@@ -8,12 +8,16 @@
 // degrees shown absent are greyed out of the palette, and one manual replay is
 // allowed per turn. Solve, or soft-fail (the tune is revealed and played). On
 // finish, stats persist and the screen locks until the next local midnight.
+//
+// Also hosts Practice — the same board driven by a fixed recognisable tune
+// (practice.js): no stats, no lock, no resume, always available.
 
 import { degreeInfo, degreeToMidi, cadenceChords } from '../theory.js';
 import { HAND_SIGNS } from '../art.js';
 import { dailyConfig } from './schedule.js';
 import { seededRng } from './rng.js';
 import { generateMelody, melodyMidis } from './puzzle.js';
+import { PRACTICE_TUNE, practiceConfig, practiceMelody } from './practice.js';
 import { DAILY_GAMES } from './registry.js';
 import { buildShareText } from './share.js';
 import { defaultDaily, recordResult, isPlayed, winPercent } from './stats.js';
@@ -30,6 +34,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     status: $('daily-status'),
     play: $('daily-play'),
     playBtn: $('daily-play-btn'),
+    practiceBtn: $('daily-practice-btn'),
     board: $('daily-board'),
     palette: $('daily-degree-buttons'),
     mascotStage: $('daily-mascot-stage'),
@@ -52,13 +57,35 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   let manualReplayUsed = false; // one manual replay per turn; reset on each Guess
   let started = false; // has the first "Play the tune" tap unlocked + played audio?
   let countdownTimer = null;
+  let practice = false; // sandbox round: fixed tune, no stats, no lock, no resume
+  let narrationTimers = [];
 
   // ---- audio ----
 
+  // Playback narration: name what's sounding — first "home" (the cadence, which
+  // new players otherwise mistake for the puzzle), then the tune itself.
+  function clearNarration() {
+    for (const t of narrationTimers) clearTimeout(t);
+    narrationTimers = [];
+  }
+
+  function narrate(melodySecs, endSecs) {
+    el.status.hidden = false;
+    el.status.textContent = '🏠 This is home — the key…';
+    narrationTimers = [
+      setTimeout(() => { el.status.textContent = '🎵 …and now the tune:'; }, melodySecs * 1000),
+      setTimeout(() => { el.status.hidden = true; }, endSecs * 1000),
+    ];
+  }
+
   function playTune() {
-    let t = piano.now + 0.25;
+    clearNarration();
+    const t0 = piano.now;
+    let t = t0 + 0.25;
     for (const chord of cadenceChords(puzzle.tonic, puzzle.mode)) t = piano.playChord(chord, t, 0.5) + 0.05;
-    piano.playSequence(midis, t + 0.2, 0.45, 0.08);
+    const melodyStart = t + 0.2;
+    piano.playSequence(midis, melodyStart, 0.45, 0.08);
+    if (game && !game.done) narrate(melodyStart - t0, melodyStart - t0 + midis.length * 0.53 + 0.3);
   }
 
   // ---- rendering ----
@@ -152,7 +179,9 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
 
   // Persist (or clear) today's committed guesses so re-entry resumes mid-game
   // rather than dealing a fresh board — see the resume logic in start().
+  // Practice is a sandbox: nothing to persist.
   function saveProgress(guesses) {
+    if (practice) return;
     const state = getState();
     state.daily ??= defaultDaily();
     state.daily.progress = guesses ? { day: config.day, guesses } : null;
@@ -211,6 +240,28 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
 
   function finish() {
     const result = game.result();
+    clearNarration();
+
+    // Practice never records stats or locks the day — celebrate (either way;
+    // no-fail ethos), name the tune as the payoff, and hand over to the real
+    // puzzle. The "fanfare" is the practice tune itself.
+    if (practice) {
+      if (!celebrate) { start(); return; } // no celebration screen wired → straight to today's
+      const names = puzzle.degrees.map((d) => degName(d, puzzle.mode)).join(' · ');
+      const fire = () => celebrate({
+        title: result.solved ? `Practice solved in ${result.guesses}/${result.maxGuesses}! 🎉` : 'Good practice! 🦩',
+        message: result.solved
+          ? `That was “${PRACTICE_TUNE.title}”. Now try today's puzzle!`
+          : `That was “${PRACTICE_TUNE.title}” — ${names}. Now try today's puzzle!`,
+        fanfare: midis,
+        buttonText: "Play today's puzzle",
+        onContinue: () => start(),
+      });
+      if (piano.buffers.size) setTimeout(fire, 900);
+      else fire();
+      return;
+    }
+
     const state = getState();
     if (!isPlayed(state.daily, config.day)) {
       state.daily = recordResult(state.daily ?? defaultDaily(), {
@@ -282,6 +333,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   // live=true right after finishing (we have the puzzle to reveal/play);
   // live=false on a locked re-entry (rebuild from stored stats only).
   function showResult(live) {
+    clearNarration();
     const today = getState().daily.today;
     const max = today.maxGuesses ?? config?.maxGuesses ?? today.rows.length;
     el.status.hidden = true;
@@ -329,12 +381,19 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
 
   // ---- lifecycle ----
 
-  async function start() {
-    config = dailyConfig(now());
-    el.title.textContent = `Daily #${config.day}`;
-    el.sub.textContent = `${config.length} notes · ${config.pool.length} possible · guess the tune`;
+  async function start() { enter(false); }
+  function startPractice() { enter(true); }
+
+  function enter(isPractice) {
+    practice = isPractice;
+    clearNarration();
+    config = practice ? practiceConfig() : dailyConfig(now());
+    el.title.textContent = practice ? 'Practice' : `Daily #${config.day}`;
+    el.sub.textContent = practice
+      ? `${config.length} notes · ${config.pool.length} possible · a tune you might know`
+      : `${config.length} notes · ${config.pool.length} possible · guess the tune`;
     el.shareStatus.textContent = '';
-    el.feedback.textContent = '';
+    el.feedback.textContent = practice ? 'No streaks here — a friendly tune to learn the ropes on.' : '';
     el.reveal.hidden = true;
     setMascot(null);
 
@@ -342,7 +401,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     state.daily ??= defaultDaily();
 
     // Already finished today's puzzle → locked result view, no audio needed.
-    if (isPlayed(state.daily, config.day)) {
+    if (!practice && isPlayed(state.daily, config.day)) {
       el.play.hidden = true; el.palette.hidden = true; el.mascotStage.hidden = true;
       puzzle = null;
       showScreen(el.screen);
@@ -351,7 +410,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     }
 
     // Fresh puzzle — show the board immediately, warm the piano, then auto-play.
-    puzzle = generateMelody(seededRng(config.seed), config);
+    puzzle = practice ? practiceMelody() : generateMelody(seededRng(config.seed), config);
     midis = melodyMidis(puzzle);
     game = DAILY_GAMES[config.gameId]({ target: puzzle.degrees, maxGuesses: config.maxGuesses });
     pending = [];
@@ -362,14 +421,19 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     // leaving or reloading must NOT hand back a clean board — that's a free retry.
     // Audio still needs a fresh user gesture, so the tune re-unlocks on Play; only
     // the committed guesses (and the spent guess count) are restored.
+    // (Practice has no stakes, so it always deals fresh.)
     const saved = state.daily.progress;
-    if (saved && saved.day === config.day) {
+    if (!practice && saved && saved.day === config.day) {
       for (const g of saved.guesses) { if (!game.done) game.submit(g); }
     }
 
     el.result.hidden = true;
     el.board.classList.remove('recap');
     el.play.hidden = false; el.palette.hidden = false; el.mascotStage.hidden = false;
+    // Practice entry point: hidden while practising; extra-inviting before the
+    // player's first-ever Daily (this game is hard cold — see the tutorial ask).
+    el.practiceBtn.hidden = practice;
+    el.practiceBtn.textContent = state.daily.played === 0 ? '🎓 New? Try a practice tune' : '🎓 Practice tune';
     buildPalette();
     setPaletteEnabled(false); // wait for the first tap (which unlocks audio + plays)
     for (const row of game.rows) lockAbsentDegrees(row.guess); // re-grey proven-absent degrees
@@ -389,6 +453,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   function stop() {
     clearInterval(countdownTimer);
     countdownTimer = null;
+    clearNarration();
     piano.stopAll?.();
   }
 
@@ -396,6 +461,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   // re-entry, so no confirm is needed.
   el.back?.addEventListener('click', () => { stop(); goHome(); });
   el.playBtn.addEventListener('click', () => onPlayButton());
+  el.practiceBtn.addEventListener('click', () => startPractice());
   el.shareBtn.addEventListener('click', () => shareResult());
 
   return { start, stop };
