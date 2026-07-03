@@ -19,7 +19,7 @@ test('different dates yield different melodies', () => {
 });
 
 test('melody respects the day config', () => {
-  const cfg = dailyConfig(new Date(2026, 6, 5)); // Sunday: len 7, octaves -1..1
+  const cfg = dailyConfig(new Date(2026, 6, 5)); // Sunday: len 7, full pool
   const m = dateFor(cfg);
   assert.equal(m.degrees.length, cfg.length);
   assert.equal(m.octaves.length, cfg.length);

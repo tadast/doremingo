@@ -3,7 +3,10 @@
 // One shared puzzle per day. The day's difficulty ramps across
 // the week, Monday easy → Sunday hard: melody length grows 5→7 and the Degree
 // pool widens from a diatonic subset to full diatonic + chromatic colours
-// (Fi/Te) with an octave spread. Major mode only for v1.
+// (Fi/Te). Major mode only for v1. Everything stays in the home octave: an
+// octave spread makes the same Degree sound like a different note to the
+// untrained ear this game targets (a +1 Ti next to a -1 Ti reads as two
+// different mystery notes, not one answer).
 //
 // Guesses = length - 2 (floor 3): fewer chances than notes keeps it a real
 // challenge (5 notes → 3 guesses, 7 → 5). Replaying the tune isn't budgeted here:
@@ -20,8 +23,8 @@ export const DAILY_SCHEDULE = {
   3: { length: 6, pool: [1, 2, 3, 4, 5, 6], octaves: [0] }, // Wed
   4: { length: 6, pool: [1, 2, 3, 4, 5, 6, 7], octaves: [0] }, // Thu
   5: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'fi'], octaves: [0] }, // Fri
-  6: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'te'], octaves: [-1, 0, 1] }, // Sat
-  0: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'fi', 'te'], octaves: [-1, 0, 1] }, // Sun
+  6: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'te'], octaves: [0] }, // Sat
+  0: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'fi', 'te'], octaves: [0] }, // Sun
 };
 
 // Hardest day's length — the upper bound for guess rows / distribution buckets.

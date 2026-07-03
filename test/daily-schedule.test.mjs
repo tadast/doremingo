@@ -28,12 +28,19 @@ test('config maps weekday to difficulty', () => {
   assert.equal(mon.gameId, 'melody');
   // guesses = length - 2 (floor 3): 5 notes → 3 chances
   assert.equal(mon.maxGuesses, 3);
-  // Sunday → hardest, longest (capped at 7), chromatic + octaves
+  // Sunday → hardest, longest (capped at 7), chromatic
   const sun = dailyConfig(new Date(2026, 6, 5)); // 2026-07-05 is a Sunday
   assert.equal(sun.length, 7);
   assert.equal(sun.maxGuesses, 5); // 7 - 2
   assert.ok(sun.pool.includes('fi') && sun.pool.includes('te'));
-  assert.deepEqual(sun.octaves, [-1, 0, 1]);
+  assert.deepEqual(sun.octaves, [0]);
+});
+
+test('every day stays in the home octave — no octave spread', () => {
+  for (let i = 0; i < 7; i++) {
+    const cfg = dailyConfig(new Date(2026, 5, 29 + i));
+    assert.deepEqual(cfg.octaves, [0], `${cfg.seed} has an octave spread`);
+  }
 });
 
 test('guesses are length-2 (floor 3), length capped 5–7', () => {

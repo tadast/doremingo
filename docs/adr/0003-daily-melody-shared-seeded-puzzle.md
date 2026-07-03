@@ -25,8 +25,11 @@ deliberate and not obvious.
   no-fail exception is **scoped to Daily only** — Learn and Warmup are untouched.
 
 - **Difficulty ramps by weekday; guesses derive from length.** Monday is easy
-  (5 notes, diatonic subset), Sunday hard (7 notes — the cap — chromatic Fi/Te,
-  octave spread). You get **fewer Guesses than notes** — length minus 2, floor 3 —
+  (5 notes, diatonic subset), Sunday hard (7 notes — the cap — chromatic Fi/Te).
+  Every day stays in the **home octave**: an octave spread was tried and dropped
+  (2026-07-04) — to the untrained ear the target user has, the same Degree an
+  octave apart sounds like a different note, turning the puzzle into a
+  register-recognition test. You get **fewer Guesses than notes** — length minus 2, floor 3 —
   so even a long tune stays a real challenge rather than a transcription exercise.
   Replaying isn't a scored resource: the tune **auto-replays
   after each Guess**, plus **one manual replay per turn** — enough to listen without
