@@ -942,3 +942,7 @@ if (DAILY_ONLY) {
 }
 
 applyRoute();
+
+// Boot finished — the inline boot-error overlay (index.html) stands down; any
+// later uncaught error is in-app and gets handled (or not) by app code.
+window.__doremingoBooted = true;

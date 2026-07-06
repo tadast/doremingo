@@ -19,6 +19,68 @@
   <link rel="apple-touch-icon" href="assets/icon-180.png">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#ff5d8f">
+  <script>
+  // Boot-failure surface. If anything throws before the app boots (old browser
+  // that can't parse the module, blocked storage, a failed script/CSS fetch),
+  // the page stays blank with the error swallowed — this shows it instead, with
+  // a mailto so players can forward it. ES5 on purpose: it must parse on the
+  // very browsers whose module parse just failed. main.js sets
+  // window.__doremingoBooted when it finishes; errors after that are the app's
+  // own problem and stay off this overlay.
+  (function () {
+    var shown = false;
+    function show(message) {
+      if (shown || window.__doremingoBooted) return;
+      shown = true;
+      var detail = message
+        + '\n\nPage: ' + location.href
+        + '\nBrowser: ' + navigator.userAgent;
+      var box = document.createElement('div');
+      box.id = 'boot-error';
+      box.setAttribute('style', 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:9999;overflow:auto;background:#fff;color:#3a2b33;font-family:system-ui,sans-serif;padding:40px 24px;text-align:center;');
+      var h = document.createElement('h1');
+      h.setAttribute('style', 'font-size:1.25rem;margin:0 0 12px;');
+      h.appendChild(document.createTextNode('🦩 Oops — DoReMingo could not start'));
+      var p = document.createElement('p');
+      p.setAttribute('style', 'margin:0 0 16px;');
+      p.appendChild(document.createTextNode('Something went wrong loading the game on this browser. Please email us this error so we can fix it:'));
+      var pre = document.createElement('pre');
+      pre.setAttribute('style', 'white-space:pre-wrap;word-break:break-word;text-align:left;background:#ffe3ee;border-radius:10px;padding:12px;font-size:0.78rem;max-width:480px;margin:0 auto 16px;');
+      pre.appendChild(document.createTextNode(detail));
+      var a = document.createElement('a');
+      a.href = 'mailto:doremingo@okdo.co.uk?subject=' + encodeURIComponent('DoReMingo error report')
+        + '&body=' + encodeURIComponent(detail);
+      a.setAttribute('style', 'display:inline-block;color:#c9184a;font-weight:700;');
+      a.appendChild(document.createTextNode('Email doremingo@okdo.co.uk'));
+      box.appendChild(h);
+      box.appendChild(p);
+      box.appendChild(pre);
+      box.appendChild(a);
+      // On <html>, not <body>: exists before <body> parses and sits outside any
+      // body styling (e.g. the opacity fade-in) that could hide it.
+      document.documentElement.appendChild(box);
+    }
+    window.addEventListener('error', function (e) {
+      var t = e && e.target;
+      // Capture-phase resource failures: only the ones that blank the app
+      // (the module script, the stylesheet) — not icons or audio samples.
+      if (t && t !== window && (t.src || t.href)) {
+        var tag = t.tagName;
+        if (tag === 'SCRIPT' || (tag === 'LINK' && t.rel === 'stylesheet')) {
+          show('Failed to load: ' + (t.src || t.href));
+        }
+        return;
+      }
+      if (e && e.message) {
+        show(e.message + (e.filename ? '\n' + e.filename + ':' + e.lineno : ''));
+      }
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) {
+      var r = e && e.reason;
+      show((r && (r.stack || r.message)) || String(r));
+    });
+  })();
+  </script>
   <link rel="stylesheet" href="css/style.css">
   <script type="application/ld+json">
   {
