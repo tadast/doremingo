@@ -8,7 +8,7 @@
 // the meet / notes-reference screens, which reuse the walk animation.
 
 import { degreeInfo, midiToDegree } from './theory.js';
-import { HAND_SIGNS } from './art.js';
+import { buildPianoKeys } from './piano-keys.js';
 import { streakMessage, missMessage } from './messages.js';
 
 export function createGameView(el) {
@@ -19,7 +19,10 @@ export function createGameView(el) {
   }
 
   function setButtonsEnabled(enabled) {
-    for (const b of el.degrees.querySelectorAll('button')) b.disabled = !enabled;
+    // Keys outside the level's pool (.off) stay disabled through every phase.
+    for (const b of el.degrees.querySelectorAll('button')) {
+      b.disabled = !enabled || b.classList.contains('off');
+    }
   }
 
   function setReplaysEnabled(enabled) {
@@ -55,10 +58,16 @@ export function createGameView(el) {
     gap = 0.05,
   } = {}) {
     const stepMs = (noteDuration + gap) * 1000;
-    // The degree buttons live in one octave. A walk that climbs past Ti lands on
-    // Do an octave up — a pitch with no button in view. Mark such notes (a prime
-    // per octave above, a comma per octave below) and skip the wrong-octave glow.
+    // The playable keys live in one octave, plus a disabled Do′ key one octave
+    // up so an upward walk has somewhere to land. Other off-octave notes are
+    // marked (a prime per octave above, a comma per octave below) with no glow.
     const octaveOf = (midi) => Math.floor((midi - walkTonic) / 12);
+    const keyFor = (key, oct) => {
+      if (key === null) return null;
+      if (oct === 0) return el.degrees.querySelector(`[data-degree="${key}"]:not([data-octave])`);
+      if (oct === 1 && key === 1) return el.degrees.querySelector('[data-degree="1"][data-octave="1"]');
+      return null;
+    };
     const spans = midis.map((midi) => {
       const key = midiToDegree(walkTonic, midi, walkMode);
       const oct = octaveOf(midi);
@@ -72,9 +81,7 @@ export function createGameView(el) {
 
     midis.forEach((midi, i) => {
       const key = midiToDegree(walkTonic, midi, walkMode);
-      const btn = withButtons && key !== null && octaveOf(midi) === 0
-        ? el.degrees.querySelector(`[data-degree="${key}"]`)
-        : null;
+      const btn = withButtons ? keyFor(key, octaveOf(midi)) : null;
       highlightTimeouts.push(setTimeout(() => {
         spans[i].classList.add('lit');
         btn?.classList.add('playing');
@@ -91,23 +98,10 @@ export function createGameView(el) {
     clearHighlights,
     showWalk,
 
-    // Build the answer buttons for a Level's Degree pool; each tap → onAnswer(d).
+    // Build the answer keyboard for a Level's Degree pool; each tap → onAnswer(d).
     buildAnswerButtons(level, mode, onAnswer) {
-      el.degrees.replaceChildren(
-        ...level.degrees.map((d) => {
-          const info = degreeInfo(d, mode);
-          const btn = document.createElement('button');
-          btn.className = 'degree-btn';
-          btn.dataset.degree = String(d);
-          const sign = HAND_SIGNS[d] ? `<span class="sign">${HAND_SIGNS[d]}</span>` : '';
-          btn.innerHTML = `${sign}<span>${info.name}</span><span class="num">${info.label}</span>`;
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation(); // don't let the answering tap skip its own resolution
-            onAnswer(d);
-          });
-          return btn;
-        }),
-      );
+      el.degrees.classList.add('piano');
+      el.degrees.replaceChildren(...buildPianoKeys(level.degrees, mode, onAnswer));
     },
 
     renderBar(value, size) {

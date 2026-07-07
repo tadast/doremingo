@@ -682,6 +682,69 @@ body.scrolled #home-screen::before { opacity: 1; }
   .degree-btn.playing { transform: none; }
 }
 
+/* ---------- piano keyboard (quiz answer row) ----------
+   Movable-do keyboard: 8 white keys (Do..Ti + disabled Do′) share the row
+   width so it never wraps, even on SE-class screens; black keys are overlaid
+   at the mode's non-scale positions. Keys outside the level pool (.off) are
+   greyed but keep their place, so Do is always the leftmost key. */
+.degrees.piano {
+  position: relative;
+  flex-wrap: nowrap;
+  gap: 2px;
+  align-items: stretch;
+  /* .quiz-main centers items to content width — stretch to the full row and
+     eat into the screen padding so the keys get as wide as possible */
+  align-self: stretch;
+  width: auto;
+  margin: 0 -16px;
+}
+.piano .degree-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  height: clamp(112px, 36vw, 150px);
+  border-radius: 0 0 8px 8px;
+  /* labels sit at the key front, like a real keyboard */
+  justify-content: flex-end;
+  padding: 0 2px 8px;
+  gap: 3px;
+  font-size: clamp(0.85rem, 3.8vw, 1.1rem);
+}
+.piano .degree-btn .sign { width: 18px; height: 18px; }
+.piano .degree-btn .num { font-size: 0.7rem; }
+/* keys stay solid in every state; a hidden label is what marks a key unplayable */
+.piano .degree-btn:disabled { opacity: 1; cursor: default; }
+/* out-of-pool keys get static neutrals — light grey whites, black blacks; the
+   note colour and label only appear while the resolution walk lights the key */
+.piano .degree-btn.off:not(.playing) { background: #d8cfc6; }
+.piano .degree-btn.black.off:not(.playing) { background: #2b2230; }
+.piano .degree-btn.off > * { visibility: hidden; }
+.piano .degree-btn.off.playing > * { visibility: visible; }
+
+.piano .degree-btn.black {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: calc(100% / 8 * 0.62);
+  height: 58%;
+  z-index: 1;
+  border-radius: 0 0 6px 6px;
+  padding: 0 0 6px;
+  font-size: 0.72rem;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+.piano .degree-btn.black .sign,
+.piano .degree-btn.black .num { display: none; }
+.piano .degree-btn.black:not(:disabled):active { transform: translateX(-50%) scale(0.95); }
+
+/* a sounding key presses down (base .playing grows — wrong metaphor on a piano) */
+.piano .degree-btn.playing { transform: translateY(4px) scale(0.97); }
+.piano .degree-btn.black.playing { transform: translateX(-50%) translateY(4px) scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .piano .degree-btn.playing { transform: none; }
+  .piano .degree-btn.black.playing { transform: translateX(-50%); }
+}
+
 /* Mingo's speech bubble — rises above him, with a little downward tail.
    Hidden when empty so he stands alone while the player listens. */
 .feedback {
@@ -923,12 +986,14 @@ body.scrolled #home-screen::before { opacity: 1; }
 }
 
 .daily-palette { margin-top: 0.25rem; }
-/* A Degree proven absent from the tune is greyed and locked out of the palette. */
+/* A Degree proven absent from the tune is greyed and locked out of the palette —
+   solid (no transparency), label kept so the player remembers what it was. */
 .daily-palette .degree-btn.absent {
   background: #cdbfd0; color: #6e5f72;
-  opacity: 0.55; box-shadow: none;
+  box-shadow: none;
 }
 .daily-palette .degree-btn.absent .sign { color: #6e5f72; }
+.daily-palette .degree-btn.black.absent { background: #4a3f50; color: #b9a9be; }
 
 /* Results: one centred, width-capped column so figures + chart line up. */
 .daily-result {

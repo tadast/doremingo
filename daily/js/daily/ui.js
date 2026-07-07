@@ -13,7 +13,7 @@
 // (practice.js): no stats, no lock, no resume, always available.
 
 import { degreeInfo, degreeToMidi, cadenceChords } from '../theory.js';
-import { HAND_SIGNS } from '../art.js';
+import { buildPianoKeys } from '../piano-keys.js';
 import { dailyConfig } from './schedule.js';
 import { seededRng } from './rng.js';
 import { generateMelody, melodyMidis } from './puzzle.js';
@@ -137,27 +137,17 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   }
 
   // Lock the palette until the tune has been played (and audio unlocked); keep
-  // any already-absent Degrees disabled.
+  // already-absent Degrees and out-of-pool keys (.off) disabled.
   function setPaletteEnabled(on) {
     for (const b of el.palette.querySelectorAll('button')) {
-      if (b.classList.contains('absent')) continue;
+      if (b.classList.contains('absent') || b.classList.contains('off')) continue;
       b.disabled = !on;
     }
   }
 
   function buildPalette() {
-    el.palette.replaceChildren(
-      ...config.pool.map((d) => {
-        const info = degreeInfo(d, config.mode);
-        const btn = document.createElement('button');
-        btn.className = 'degree-btn';
-        btn.dataset.degree = String(d);
-        const sign = HAND_SIGNS[d] ? `<span class="sign">${HAND_SIGNS[d]}</span>` : '';
-        btn.innerHTML = `${sign}<span>${info.name}</span><span class="num">${info.label}</span>`;
-        btn.addEventListener('click', () => tapDegree(d));
-        return btn;
-      }),
-    );
+    el.palette.classList.add('piano');
+    el.palette.replaceChildren(...buildPianoKeys(config.pool, config.mode, tapDegree));
   }
 
   // One manual replay per turn; the tune also auto-replays after every Guess.
