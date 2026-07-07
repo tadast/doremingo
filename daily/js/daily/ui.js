@@ -18,6 +18,7 @@ import { dailyConfig } from './schedule.js';
 import { seededRng } from './rng.js';
 import { generateMelody, melodyMidis } from './puzzle.js';
 import { PRACTICE_TUNE, practiceConfig, practiceMelody } from './practice.js';
+import { tourSteps } from './tour.js';
 import { DAILY_GAMES } from './registry.js';
 import { buildShareText } from './share.js';
 import { defaultDaily, recordResult, isPlayed, winPercent } from './stats.js';
@@ -32,6 +33,10 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     title: $('daily-title'),
     sub: $('daily-sub'),
     status: $('daily-status'),
+    tour: $('daily-tour'),
+    tourText: $('daily-tour-text'),
+    tourBtn: $('daily-tour-btn'),
+    tourSkip: $('daily-tour-skip'),
     play: $('daily-play'),
     playBtn: $('daily-play-btn'),
     practiceBtn: $('daily-practice-btn'),
@@ -58,6 +63,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   let started = false; // has the first "Play the tune" tap unlocked + played audio?
   let countdownTimer = null;
   let practice = false; // sandbox round: fixed tune, no stats, no lock, no resume
+  let tourStep = -1; // -1 = tour inactive; 0..2 = current coach-bubble step (practice only)
   let narrationTimers = [];
 
   // ---- audio ----
@@ -78,14 +84,24 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     ];
   }
 
+  // Returns when the last chord ends (scheduler time).
+  function playCadence(t) {
+    for (const chord of cadenceChords(puzzle.tonic, puzzle.mode)) t = piano.playChord(chord, t, 0.5) + 0.05;
+    return t;
+  }
+
+  // Returns roughly when the tune ends.
+  function playMelody(t) {
+    piano.playSequence(midis, t, 0.45, 0.08);
+    return t + midis.length * 0.53 + 0.3;
+  }
+
   function playTune() {
     clearNarration();
     const t0 = piano.now;
-    let t = t0 + 0.25;
-    for (const chord of cadenceChords(puzzle.tonic, puzzle.mode)) t = piano.playChord(chord, t, 0.5) + 0.05;
-    const melodyStart = t + 0.2;
-    piano.playSequence(midis, melodyStart, 0.45, 0.08);
-    if (game && !game.done) narrate(melodyStart - t0, melodyStart - t0 + midis.length * 0.53 + 0.3);
+    const melodyStart = playCadence(t0 + 0.25) + 0.2;
+    const end = playMelody(melodyStart);
+    if (game && !game.done) narrate(melodyStart - t0, end - t0);
   }
 
   // ---- rendering ----
@@ -217,13 +233,16 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     startTune();
   }
 
+  // The triggering tap is the gesture that unlocks the AudioContext.
+  async function ensurePiano() {
+    try { await piano.init(); return true; }
+    catch (err) { console.error(err); return false; }
+  }
+
   async function startTune() {
     el.playBtn.disabled = true;
     el.status.hidden = true;
-    try {
-      await piano.init(); // this tap is the gesture that unlocks the AudioContext
-    } catch (err) {
-      console.error(err);
+    if (!(await ensurePiano())) {
       el.playBtn.disabled = false;
       el.status.hidden = false;
       el.status.textContent = 'Could not load the piano — tap “Play the tune” to retry.';
@@ -234,6 +253,70 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     manualReplayUsed = false; // first turn still gets its one manual replay
     updatePlayBtn();
     playTune();
+  }
+
+  // ---- practice tour ----
+  // A three-step coach bubble for first-timers (practice only): home → the tune
+  // → your task. Tap-to-advance; steps 1 and 2 play cadence / melody alone (no
+  // narrate() — the bubble IS the narration). Palette + play row stay locked
+  // until the tour ends. No persistence: practice is opt-in, so it always runs.
+
+  function renderTourStep() {
+    const step = tourSteps(config)[tourStep];
+    el.tourText.textContent = step.text;
+    el.tourBtn.textContent = step.button;
+    el.tourBtn.disabled = false;
+    el.tour.hidden = false;
+  }
+
+  function startTour() {
+    tourStep = 0;
+    el.play.hidden = true; // the bubble's button is the only call to action
+    renderTourStep();
+  }
+
+  function hideTour() {
+    tourStep = -1;
+    el.tour.hidden = true;
+  }
+
+  // Hand the board back to the normal flow: play row returns as the per-turn
+  // replay (audio is unlocked by now), palette opens for the first guess.
+  function endTour() {
+    hideTour();
+    el.play.hidden = false;
+    started = true;
+    setPaletteEnabled(true);
+    manualReplayUsed = false;
+    updatePlayBtn();
+  }
+
+  async function advanceTour() {
+    const step = tourSteps(config)[tourStep];
+    if (step.plays === 'cadence') { // step 1: this tap unlocks the AudioContext
+      el.tourBtn.disabled = true;
+      if (!(await ensurePiano())) {
+        el.tourText.textContent = 'Could not load the piano — tap “Play home” to retry.';
+        el.tourBtn.disabled = false;
+        return; // stay on this step
+      }
+      playCadence(piano.now + 0.25);
+    } else if (step.plays === 'melody') {
+      playMelody(piano.now + 0.2);
+    }
+    tourStep += 1;
+    if (tourStep >= tourSteps(config).length) { endTour(); return; }
+    renderTourStep();
+  }
+
+  // Skip: returning players know the drill. If audio never got unlocked, the
+  // normal '▶ Play the tune' first-tap flow takes over; if it did, hand the
+  // board over and play the full tune once so they still hear the puzzle.
+  function skipTour() {
+    const unlocked = tourStep > 0;
+    hideTour();
+    if (unlocked) { endTour(); playTune(); return; }
+    el.play.hidden = false; // pre-start state: startTune on first tap
   }
 
   // ---- finishing ----
@@ -396,6 +479,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     el.feedback.textContent = practice ? 'No streaks here — a friendly tune to learn the ropes on.' : '';
     el.reveal.hidden = true;
     setMascot(null);
+    hideTour(); // reset any coach bubble left from a previous practice visit
 
     const state = getState();
     state.daily ??= defaultDaily();
@@ -448,6 +532,9 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     el.status.hidden = true;
     el.playBtn.disabled = false;
     el.playBtn.textContent = '▶ Play the tune';
+
+    // First-timers get walked through home → tune → task before the board opens.
+    if (practice) startTour();
   }
 
   function stop() {
@@ -462,6 +549,8 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   el.back?.addEventListener('click', () => { stop(); goHome(); });
   el.playBtn.addEventListener('click', () => onPlayButton());
   el.practiceBtn.addEventListener('click', () => startPractice());
+  el.tourBtn.addEventListener('click', () => advanceTour());
+  el.tourSkip.addEventListener('click', () => skipTour());
   el.shareBtn.addEventListener('click', () => shareResult());
 
   return { start, stop };
