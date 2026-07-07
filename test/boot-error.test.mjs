@@ -48,6 +48,14 @@ test('errors after boot are ignored', () => {
   assert.equal(window.document.getElementById('boot-error'), null);
 });
 
+test('opaque cross-origin "Script error." is ignored — extension/injected-script noise', () => {
+  const { window } = boot();
+  // What Safari reports for errors in scripts the page didn't load (extension
+  // content scripts, content blockers): no filename, no line, no detail.
+  fireError(window, { message: 'Script error.' });
+  assert.equal(window.document.getElementById('boot-error'), null);
+});
+
 test('unhandled promise rejection before boot shows the overlay', () => {
   const { window } = boot();
   const e = new window.Event('unhandledrejection');

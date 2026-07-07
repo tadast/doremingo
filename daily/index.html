@@ -72,6 +72,10 @@
         return;
       }
       if (e && e.message) {
+        // Bare "Script error." with no filename is a cross-origin script the
+        // page never loaded (Safari extensions, content blockers). Not ours,
+        // carries zero detail — ignore, or it hijacks a working boot.
+        if (!e.filename && /^Script error\.?$/.test(e.message)) return;
         show(e.message + (e.filename ? '\n' + e.filename + ':' + e.lineno : ''));
       }
     }, true);
