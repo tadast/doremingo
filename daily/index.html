@@ -66,6 +66,9 @@
       // (the module script, the stylesheet) — not icons or audio samples.
       if (t && t !== window && (t.src || t.href)) {
         var tag = t.tagName;
+        // Analytics beacon is optional — blocked by adblockers, must never
+        // trip the boot overlay.
+        if (t.src && t.src.indexOf('cloudflareinsights.com') !== -1) return;
         if (tag === 'SCRIPT' || (tag === 'LINK' && t.rel === 'stylesheet')) {
           show('Failed to load: ' + (t.src || t.href));
         }
@@ -290,5 +293,6 @@
 
   <button id="load-error" class="load-error" hidden></button>
   <script type="module" src="js/main.js"></script>
+  <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d03b6b98727e47a8bb2796c9da7fa5ec"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
