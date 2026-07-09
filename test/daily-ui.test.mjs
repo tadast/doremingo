@@ -18,7 +18,10 @@ const DAILY_HTML = `
       <button id="daily-tour-skip"></button>
     </div>
     <div id="daily-play">
+      <button id="daily-home-btn" hidden></button>
       <button id="daily-play-btn"></button>
+    </div>
+    <div class="daily-practice-row">
       <button id="daily-practice-btn" hidden></button>
     </div>
     <div id="daily-board"></div>
@@ -156,6 +159,73 @@ test('resume re-greys degrees proven absent by saved guesses', async (t) => {
   assert.ok(la.classList.contains('absent'));
 });
 
+test('home replays freely; one tune replay then locks both buttons for the turn', async (t) => {
+  const piano = recordingPiano();
+  const daily = freshDaily(piano);
+  t.after(() => daily.stop());
+  await startAndUnlock(daily); // first tap: glued home+tune (4 chords + 1 seq)
+
+  const homeBtn = document.getElementById('daily-home-btn');
+  const tuneBtn = document.getElementById('daily-play-btn');
+  assert.equal(homeBtn.hidden, false, 'home replay offered after the first play');
+
+  // Home is the anchor — unlimited, and never spends the turn's budget.
+  const afterStart = piano.calls.length;
+  homeBtn.click();
+  homeBtn.click();
+  assert.deepEqual(piano.calls.slice(afterStart), Array(8).fill('chord'), 'each home tap replays the cadence');
+  assert.equal(homeBtn.disabled, false, 'home stays free');
+  assert.equal(tuneBtn.disabled, false, 'tune still available');
+
+  // The one tune replay: plays the melody alone and locks BOTH buttons.
+  const beforeTune = piano.calls.length;
+  tuneBtn.click();
+  assert.deepEqual(piano.calls.slice(beforeTune), ['seq'], 'tune replay is melody only');
+  assert.equal(tuneBtn.disabled, true, 'tune locked after its single replay');
+  assert.equal(homeBtn.disabled, true, 'home locked too once the tune replay is spent');
+
+  const afterLock = piano.calls.length;
+  homeBtn.click();
+  tuneBtn.click();
+  assert.equal(piano.calls.length, afterLock, 'both inert until the next guess');
+});
+
+test('home plays on the first load only; later turns auto-replay the tune alone', async (t) => {
+  const piano = recordingPiano();
+  piano.buffers = new Map([['note', 1]]); // non-empty → auto-replay fires after a guess
+  const daily = freshDaily(piano);
+  t.after(() => daily.stop());
+  await startAndUnlock(daily);
+  assert.deepEqual(piano.calls, ['chord', 'chord', 'chord', 'chord', 'seq'], 'first load: home then tune');
+
+  const afterFirst = piano.calls.length;
+  for (let i = 0; i < 7; i++) paletteBtn(6).click(); // full wrong guess → next turn
+  assert.deepEqual(piano.calls.slice(afterFirst), ['seq'], 'turn 2 auto-replays the tune alone — no home');
+});
+
+test('the primary CTA pulses on load and stops on first tap', async (t) => {
+  const daily = freshDaily();
+  t.after(() => daily.stop());
+  await daily.start();
+  const playBtn = document.getElementById('daily-play-btn');
+  assert.ok(playBtn.classList.contains('pulse-cta'), 'CTA pulses before the first tap');
+  playBtn.click();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(playBtn.classList.contains('pulse-cta'), false, 'pulse stops once tapped');
+});
+
+test('the turn prompt clears the moment the player taps a key', async (t) => {
+  const daily = freshDaily();
+  t.after(() => daily.stop());
+  await startAndUnlock(daily);
+  const status = document.getElementById('daily-status');
+  status.hidden = false;
+  status.textContent = '👉 Your turn — play it back on the keys';
+  paletteBtn(1).click();
+  assert.equal(status.hidden, true, 'prompt hidden once the player plays a note');
+});
+
 // ---- practice tour (coach bubble) ----
 
 const $id = (id) => document.getElementById(id);
@@ -209,8 +279,9 @@ test('tour steps play cadence alone, then melody alone, then hand the board over
   assert.equal($id('daily-tour').hidden, true);
   assert.equal($id('daily-play').hidden, false);
   const playBtn = $id('daily-play-btn');
-  assert.equal(playBtn.textContent, '🔁 Hear it again');
-  assert.equal(playBtn.disabled, false, 'manual replay available');
+  assert.equal(playBtn.textContent, '🎵 Hear tune');
+  assert.equal(playBtn.disabled, false, 'tune replay available');
+  assert.equal($id('daily-home-btn').hidden, false, 'home replay now offered');
   assert.equal(paletteBtn(1).disabled, false, 'palette open for guessing');
 });
 
@@ -235,7 +306,7 @@ test('skip before any audio falls back to the normal first-tap flow', async (t) 
   $id('daily-tour-skip').click();
   assert.equal($id('daily-tour').hidden, true);
   assert.equal($id('daily-play').hidden, false);
-  assert.equal($id('daily-play-btn').textContent, '▶ Play the tune');
+  assert.equal($id('daily-play-btn').textContent, '▶ Play Home & Tune');
   assert.equal(paletteBtn(1).disabled, true, 'palette waits for the first play tap');
 });
 

@@ -39,6 +39,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     tourSkip: $('daily-tour-skip'),
     play: $('daily-play'),
     playBtn: $('daily-play-btn'),
+    homeBtn: $('daily-home-btn'),
     practiceBtn: $('daily-practice-btn'),
     board: $('daily-board'),
     palette: $('daily-degree-buttons'),
@@ -75,12 +76,19 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     narrationTimers = [];
   }
 
+  // Once the tune finishes, hand the turn over — the prompt stays up until the
+  // player taps their first key (tapDegree clears it). Shown every turn.
+  function promptYourTurn() {
+    el.status.hidden = false;
+    el.status.textContent = '👉 Your turn — play it back on the keys';
+  }
+
   function narrate(melodySecs, endSecs) {
     el.status.hidden = false;
     el.status.textContent = '🏠 This is home — the key…';
     narrationTimers = [
-      setTimeout(() => { el.status.textContent = '🎵 …and now the tune:'; }, melodySecs * 1000),
-      setTimeout(() => { el.status.hidden = true; }, endSecs * 1000),
+      setTimeout(() => { el.status.textContent = '🎵 …and now the tune'; }, melodySecs * 1000),
+      setTimeout(promptYourTurn, endSecs * 1000),
     ];
   }
 
@@ -102,6 +110,20 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     const melodyStart = playCadence(t0 + 0.25) + 0.2;
     const end = playMelody(melodyStart);
     if (game && !game.done) narrate(melodyStart - t0, end - t0);
+  }
+
+  // Later turns auto-replay the tune ALONE — the ear already holds the key, so we
+  // don't re-play home (it's on demand via the button). Home plays only on the
+  // very first load (playTune above).
+  function playTuneOnly() {
+    clearNarration();
+    const t0 = piano.now;
+    const end = playMelody(t0 + 0.25);
+    if (game && !game.done) {
+      el.status.hidden = false;
+      el.status.textContent = '🎵 the tune';
+      narrationTimers = [setTimeout(promptYourTurn, (end - t0) * 1000)];
+    }
   }
 
   // ---- rendering ----
@@ -150,10 +172,25 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     el.palette.replaceChildren(...buildPianoKeys(config.pool, config.mode, tapDegree));
   }
 
-  // One manual replay per turn; the tune also auto-replays after every Guess.
+  // Pre-start: a single "Play Home & Tune" primes the AudioContext and plays the
+  // glued cadence+tune. After that the row splits: home is the anchor (replay it
+  // freely) and the tune gets ONE replay per turn — spending it locks BOTH until
+  // the next Guess. `manualReplayUsed` == the tune replay is spent → both locked.
   function updatePlayBtn() {
-    el.playBtn.textContent = '🔁 Hear it again';
-    el.playBtn.disabled = manualReplayUsed || game.done;
+    if (!started) {
+      el.homeBtn.hidden = true;
+      el.playBtn.textContent = '▶ Play Home & Tune';
+      el.playBtn.disabled = game.done;
+      el.playBtn.classList.toggle('pulse-cta', !game.done); // nudge until first tap
+      return;
+    }
+    el.playBtn.classList.remove('pulse-cta');
+    el.homeBtn.hidden = false;
+    el.homeBtn.textContent = '🏠 Hear home';
+    el.playBtn.textContent = '🎵 Hear tune';
+    const locked = manualReplayUsed || game.done;
+    el.homeBtn.disabled = locked;
+    el.playBtn.disabled = locked;
   }
 
   function refreshLive() {
@@ -173,6 +210,8 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
 
   function tapDegree(d) {
     if (game.done || pending.length >= config.length) return;
+    clearNarration();          // player acted — drop the "your turn" nudge
+    el.status.hidden = true;
     pending.push(d);
     // a reference pitch in the home octave — helps the ear compare
     if (piano.buffers.size) piano.playNote(degreeToMidi(puzzle.tonic, d, 0, puzzle.mode), piano.now + 0.02, 0.9, 0.95);
@@ -206,20 +245,29 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     setMascot(null);
     manualReplayUsed = false; // new turn → one manual replay again
     updatePlayBtn();
-    if (piano.buffers.size) playTune(); // auto-replay the tune after each Guess
+    if (piano.buffers.size) playTuneOnly(); // auto-replay tune only — no home after turn 1
   }
 
-  function replay() {
+  // Home is the anchor — replay it freely (hearing the key can't leak the answer).
+  function replayHome() {
+    if (manualReplayUsed || game.done) return;
+    clearNarration();
+    playCadence(piano.now + 0.05);
+  }
+
+  // The tune gets ONE replay per turn; taking it spends the budget and locks both.
+  function replayTune() {
     if (manualReplayUsed || game.done) return;
     manualReplayUsed = true;
     updatePlayBtn();
-    playTune();
+    clearNarration();
+    playMelody(piano.now + 0.05);
   }
 
   // The play button's first job is to unlock audio (browsers need a tap) and play
   // the tune; after that it's the per-turn "Hear it again" replay.
   function onPlayButton() {
-    if (started) { replay(); return; }
+    if (started) { replayTune(); return; }
     startTune();
   }
 
@@ -231,11 +279,12 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
 
   async function startTune() {
     el.playBtn.disabled = true;
+    el.playBtn.classList.remove('pulse-cta'); // stop nudging the moment it's tapped
     el.status.hidden = true;
     if (!(await ensurePiano())) {
       el.playBtn.disabled = false;
       el.status.hidden = false;
-      el.status.textContent = 'Could not load the piano — tap “Play the tune” to retry.';
+      el.status.textContent = 'Could not load the piano — tap “Play Home & Tune” to retry.';
       return;
     }
     started = true;
@@ -521,7 +570,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     // first tap on this button both unlocks the AudioContext and plays the tune.
     el.status.hidden = true;
     el.playBtn.disabled = false;
-    el.playBtn.textContent = '▶ Play the tune';
+    updatePlayBtn(); // pre-start label + first-load pulse nudge
 
     // First-timers get walked through home → tune → task before the board opens.
     if (practice) startTour();
@@ -538,6 +587,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   // re-entry, so no confirm is needed.
   el.back?.addEventListener('click', () => { stop(); goHome(); });
   el.playBtn.addEventListener('click', () => onPlayButton());
+  el.homeBtn.addEventListener('click', () => replayHome());
   el.practiceBtn.addEventListener('click', () => startPractice());
   el.tourBtn.addEventListener('click', () => advanceTour());
   el.tourSkip.addEventListener('click', () => skipTour());

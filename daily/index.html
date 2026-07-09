@@ -243,27 +243,36 @@
         <button id="daily-tour-skip" class="tour-skip">Skip the tour</button>
       </div>
 
-      <div id="daily-play" class="daily-play">
-        <button id="daily-play-btn" class="big-btn">🔁 Hear it again</button>
-        <button id="daily-practice-btn" class="chip-btn" hidden>🎓 Practice tune</button>
+      <!-- Play cluster + result share one vertically-centred band (like
+           .quiz-main) so the board/keyboard sit in the middle of tall screens
+           instead of jamming under the header. Mingo stays pinned below. -->
+      <div class="daily-main">
+        <div id="daily-play" class="daily-play">
+          <button id="daily-home-btn" class="big-btn secondary" hidden>🏠 Hear home</button>
+          <button id="daily-play-btn" class="big-btn">▶ Play Home &amp; Tune</button>
+        </div>
+
+        <div id="daily-board" class="daily-board" aria-label="your guesses"></div>
+
+        <div id="daily-degree-buttons" class="degrees daily-palette"></div>
+
+        <div class="daily-practice-row">
+          <button id="daily-practice-btn" class="chip-btn" hidden>🎓 Practice tune</button>
+        </div>
+
+        <div id="daily-result" class="daily-result" hidden>
+          <h2 id="daily-result-title"></h2>
+          <p id="daily-reveal" class="daily-reveal" hidden></p>
+          <div id="daily-stats" class="daily-stats"></div>
+          <button id="daily-share-btn" class="big-btn">Share result</button>
+          <p id="daily-share-status" class="status" aria-live="polite"></p>
+          <p id="daily-countdown" class="status"></p>
+        </div>
       </div>
-
-      <div id="daily-board" class="daily-board" aria-label="your guesses"></div>
-
-      <div id="daily-degree-buttons" class="degrees daily-palette"></div>
 
       <div id="daily-mascot-stage" class="mascot-stage">
         <p id="daily-feedback" class="feedback" aria-live="polite"></p>
         <div id="daily-mascot" class="mascot mascot-sm"></div>
-      </div>
-
-      <div id="daily-result" class="daily-result" hidden>
-        <h2 id="daily-result-title"></h2>
-        <p id="daily-reveal" class="daily-reveal" hidden></p>
-        <div id="daily-stats" class="daily-stats"></div>
-        <button id="daily-share-btn" class="big-btn">Share result</button>
-        <p id="daily-share-status" class="status" aria-live="polite"></p>
-        <p id="daily-countdown" class="status"></p>
       </div>
     </section>
 

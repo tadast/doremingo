@@ -23,6 +23,10 @@
 }
 
 :root {
+  /* Width of the centred app column. Phones stay at 480px (the design width);
+     tablets/desktop widen it in the breakpoints below so the keyboard and
+     board get bigger instead of stranding the play area in a narrow strip. */
+  --app-w: 480px;
   --bg: #fff7ed;
   --ink: #3b2d3f;
   --pink: #ff5d8f;
@@ -73,7 +77,7 @@ body {
   /* fixed-width centred column — the track must NOT size to content, or
      wide feedback ("🔥 3 in a row!") would stretch the progress bar and
      shift the mascot. .screen fills this; its own max-width is the cap. */
-  grid-template-columns: min(100%, 480px);
+  grid-template-columns: min(100%, var(--app-w));
   justify-content: center;
   align-items: center;
   /* app, not document: suppress text selection, callout menu, double-tap zoom,
@@ -110,7 +114,7 @@ body {
   /* honour the notch / Dynamic Island and the home-indicator inset */
   padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
            max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
-  max-width: 480px;
+  max-width: var(--app-w);
   width: 100%;
 }
 
@@ -149,6 +153,15 @@ h1 {
   margin-top: 12px;
 }
 .big-btn.secondary:active { box-shadow: 0 2px 0 #e8d5c4; }
+/* First-load nudge: pulse the primary CTA (keeps the 3D shadow) until first tap. */
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 4px 0 #d23369, 0 0 0 0 rgba(255, 93, 143, 0.5); }
+  50%      { box-shadow: 0 4px 0 #d23369, 0 0 20px 7px rgba(255, 93, 143, 0.6); }
+}
+.big-btn.pulse-cta { animation: cta-pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .big-btn.pulse-cta { animation: none; box-shadow: 0 4px 0 #d23369, 0 0 16px 4px rgba(255, 93, 143, 0.5); }
+}
 
 .level-list {
   display: flex;
@@ -278,6 +291,22 @@ h1 {
   flex-direction: column;
 }
 #daily-mascot-stage { margin-top: auto; }
+/* The play cluster (and, at the end, the recap board + result) centres in the
+   space between header and Mingo — mirrors .quiz-main so both modes share the
+   same vertical rhythm. gap replaces the pieces' own margins so spacing stays
+   even. */
+.daily-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3.5vw, 22px);
+  min-height: 0;
+}
+.daily-main > .daily-play,
+.daily-main > .daily-board,
+.daily-main > .daily-palette { margin: 0; }
 
 /* Level view fills the viewport: nav at top, question/answers centred in the
    thumb zone, Mingo anchored at the bottom talking up through a bubble. */
@@ -356,7 +385,7 @@ body.scrolled #home-screen::before { opacity: 1; }
      The calc keeps it on the centred column's right edge on wide viewports. */
   position: fixed;
   top: max(16px, env(safe-area-inset-top));
-  right: max(16px, env(safe-area-inset-right), calc((100vw - 480px) / 2 + 16px));
+  right: max(16px, env(safe-area-inset-right), calc((100vw - var(--app-w)) / 2 + 16px));
   width: 44px;
   height: 44px;
   border: none;
@@ -376,14 +405,14 @@ body.scrolled #home-screen::before { opacity: 1; }
 .home-back-btn {
   position: fixed;
   top: max(16px, env(safe-area-inset-top));
-  left: max(16px, env(safe-area-inset-left), calc((100vw - 480px) / 2 + 16px));
+  left: max(16px, env(safe-area-inset-left), calc((100vw - var(--app-w)) / 2 + 16px));
   z-index: 10;
 }
 
 .menu-popover {
   position: fixed;
   top: max(64px, calc(env(safe-area-inset-top) + 48px));
-  right: max(16px, env(safe-area-inset-right), calc((100vw - 480px) / 2 + 16px));
+  right: max(16px, env(safe-area-inset-right), calc((100vw - var(--app-w)) / 2 + 16px));
   z-index: 10;
   background: white;
   border-radius: 14px;
@@ -611,7 +640,7 @@ body.scrolled #home-screen::before { opacity: 1; }
   .kbd-hint { display: none; }
 }
 
-.status { color: #8a7a8f; }
+.status { color: #8a7a8f; padding-bottom: 0.75rem; }
 
 .prompt { font-size: 1.3rem; min-height: 2em; }
 
@@ -674,6 +703,18 @@ body.scrolled #home-screen::before { opacity: 1; }
 
 .degree-btn.correct { outline: 4px solid var(--green); }
 .degree-btn.wrong { outline: 4px solid var(--red); }
+/* On the piano keyboard, a thin inner border on the sides + bottom only — no
+   top edge (so it can't protrude above the keyboard) and inset (so the next
+   key can't clip its right edge). Higher specificity than the .playing walk
+   glow so it stays visible when a key is both answered and being walked. */
+.degrees.piano .degree-btn.correct {
+  outline: none;
+  box-shadow: inset 3px 0 0 var(--green), inset -3px 0 0 var(--green), inset 0 -3px 0 var(--green);
+}
+.degrees.piano .degree-btn.wrong {
+  outline: none;
+  box-shadow: inset 3px 0 0 var(--red), inset -3px 0 0 var(--red), inset 0 -3px 0 var(--red);
+}
 .degree-btn.playing {
   transform: scale(1.1);
   box-shadow: 0 0 0 4px var(--yellow), 0 0 18px var(--yellow);
@@ -943,6 +984,8 @@ body.scrolled #home-screen::before { opacity: 1; }
 .daily-play .big-btn:disabled {
   opacity: 0.4; cursor: default; transform: none; box-shadow: 0 2px 0 #d23369;
 }
+/* Practice escape-hatch — lives under the palette, out of the play cluster. */
+.daily-practice-row { display: flex; justify-content: center; margin: 0.75rem 0 0; }
 
 .daily-board {
   display: flex; flex-direction: column; gap: 6px;
@@ -1043,7 +1086,11 @@ body.scrolled #home-screen::before { opacity: 1; }
   gap: 4px;
   padding: 8px max(8px, env(safe-area-inset-right))
            max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-  background: linear-gradient(to top, var(--bg) 72%, transparent);
+  /* Opaque bar so every tab sits on the same ground — the old fade-to-
+     transparent left inactive tabs' tops translucent next to the solid active
+     pill. A soft cream halo above still blends content scrolling under it. */
+  background: var(--bg);
+  box-shadow: 0 -10px 16px 6px var(--bg);
 }
 .tab-btn {
   flex: 1 1 0;
@@ -1098,3 +1145,16 @@ body.scrolled #home-screen::before { opacity: 1; }
 .help-dialog h2 { margin: 0 0 12px; color: var(--pink); font-size: 1.3rem; }
 .help-dialog p { margin: 0 0 12px; line-height: 1.45; font-size: 0.95rem; }
 .help-dialog .big-btn { margin-top: 4px; width: 100%; }
+
+/* ---------- Larger screens (tablets / desktop) ----------
+   Phones keep the 480px design width. Above it, widen the app column so the
+   keyboard, board and buttons scale up instead of sitting in a narrow strip
+   surrounded by dead space, and let the piano keys grow taller to match. */
+@media (min-width: 700px) {
+  :root { --app-w: 620px; }
+  .piano .degree-btn { height: clamp(150px, 26vw, 200px); }
+}
+@media (min-width: 900px) {
+  :root { --app-w: 720px; }
+  .piano .degree-btn { height: clamp(180px, 22vw, 230px); }
+}
