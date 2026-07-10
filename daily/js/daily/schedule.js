@@ -1,34 +1,46 @@
 // Daily schedule — maps a calendar date to that day's puzzle parameters.
 //
-// One shared puzzle per day. The day's difficulty ramps across
-// the week, Monday easy → Sunday hard: melody length grows 5→7 and the Degree
-// pool widens from a diatonic subset to full diatonic + chromatic colours
-// (Fi/Te). Major mode only for v1. Everything stays in the home octave: an
-// octave spread makes the same Degree sound like a different note to the
-// untrained ear this game targets (a +1 Ti next to a -1 Ti reads as two
-// different mystery notes, not one answer).
+// One shared puzzle per day. Every day is a fixed 5 notes; difficulty rides on
+// ONE lever — how wide the Degree pool is — surfaced to the player as an
+// Easy / Medium / Hard Tier label before they start. Diatonic only: chromatic
+// colours (Fi/Te) live in Learn, never in the newcomer-facing Daily.
+//   Easy   = major pentatonic (no tendency tones)
+//   Medium = + Ti (leading tone — strong pull home, the easier tendency tone)
+//   Hard   = + Fa = full diatonic
+// Everything stays in the home octave: an octave spread makes the same Degree
+// sound like a different note to the untrained ear this game targets. Major
+// mode only for v1.
 //
-// Guesses = length - 2 (floor 3): fewer chances than notes keeps it a real
-// challenge (5 notes → 3 guesses, 7 → 5). Replaying the tune isn't budgeted here:
-// the UI auto-replays after each Guess + one manual replay per turn.
+// Guesses = length - 2 (floor 3): with length fixed at 5 this is a uniform 3
+// every day. Replaying the tune isn't budgeted here: the UI auto-replays after
+// each Guess + one manual replay per turn.
+
+// Degree pools per Tier. Single-Degree steps, hardest note (Fa) added last.
+const EASY = [1, 2, 3, 5, 6]; // major pentatonic
+const MEDIUM = [1, 2, 3, 5, 6, 7]; // + Ti
+const HARD = [1, 2, 3, 4, 5, 6, 7]; // + Fa = full diatonic
 
 // Daily #1. Adjust before public launch if needed; changing it renumbers every
 // puzzle (cosmetic — the puzzles themselves are seeded by the date string).
 export const DAILY_EPOCH = { y: 2026, m: 5, d: 29 }; // 2026-06-29 (month is 0-based)
 
-// Keyed by JS Date.getDay(): 0 = Sunday … 6 = Saturday. Length 5–7.
+// Keyed by JS Date.getDay(): 0 = Sunday … 6 = Saturday. Length fixed at 5. The
+// weekday→Tier map is a deliberate sawtooth (not a smooth ramp) — an easy day
+// is never more than one day away, so a newcomer landing mid-week has a decent
+// chance of a gentle puzzle.
 export const DAILY_SCHEDULE = {
-  1: { length: 5, pool: [1, 2, 3, 5], octaves: [0] }, // Mon
-  2: { length: 5, pool: [1, 2, 3, 4, 5], octaves: [0] }, // Tue
-  3: { length: 6, pool: [1, 2, 3, 4, 5, 6], octaves: [0] }, // Wed
-  4: { length: 6, pool: [1, 2, 3, 4, 5, 6, 7], octaves: [0] }, // Thu
-  5: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'fi'], octaves: [0] }, // Fri
-  6: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'te'], octaves: [0] }, // Sat
-  0: { length: 7, pool: [1, 2, 3, 4, 5, 6, 7, 'fi', 'te'], octaves: [0] }, // Sun
+  1: { length: 5, pool: EASY, octaves: [0], tier: 'Easy' }, // Mon
+  2: { length: 5, pool: MEDIUM, octaves: [0], tier: 'Medium' }, // Tue
+  3: { length: 5, pool: EASY, octaves: [0], tier: 'Easy' }, // Wed
+  4: { length: 5, pool: HARD, octaves: [0], tier: 'Hard' }, // Thu
+  5: { length: 5, pool: MEDIUM, octaves: [0], tier: 'Medium' }, // Fri
+  6: { length: 5, pool: MEDIUM, octaves: [0], tier: 'Medium' }, // Sat
+  0: { length: 5, pool: HARD, octaves: [0], tier: 'Hard' }, // Sun
 };
 
-// Hardest day's length — the upper bound for guess rows / distribution buckets.
-export const MAX_MELODY_LENGTH = 7;
+// Every day is 5 notes now — the upper bound for guess rows / distribution
+// buckets. (Kept as a named constant: stats sizes its histogram from it.)
+export const MAX_MELODY_LENGTH = 5;
 
 const MS_PER_DAY = 86400000;
 
@@ -58,7 +70,7 @@ export function dailyConfig(date) {
     mode: 'major',
     day: dayNumber(date),
     seed: localDateKey(date),
-    maxGuesses: Math.max(3, base.length - 2), // fewer chances than notes
+    maxGuesses: Math.max(3, base.length - 2), // fewer chances than notes → uniform 3
     ...base,
   };
 }

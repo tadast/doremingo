@@ -4,7 +4,7 @@ Daily Mode is a single puzzle generated from the calendar date — the **same fo
 every player that day** (the daily shared-puzzle model popularised by word games),
 built so a player can share a spoiler-free result and pull friends in. The first
 Daily game is **Daily Melody**: echo a hidden melody by Degree, per-position feedback, with
-**one Guess per note** (a 5-note tune gives 5 Guesses). Several choices here are
+**fewer Guesses than notes** (a fixed 5-note tune gives 3 Guesses). Several choices here are
 deliberate and not obvious.
 
 - **Date-seeded determinism, local midnight.** "Same for everyone" needs a
@@ -24,13 +24,30 @@ deliberate and not obvious.
   share still reads `X/N`, but the player always leaves having *heard* the answer. The
   no-fail exception is **scoped to Daily only** — Learn and Warmup are untouched.
 
-- **Difficulty ramps by weekday; guesses derive from length.** Monday is easy
-  (5 notes, diatonic subset), Sunday hard (7 notes — the cap — chromatic Fi/Te).
-  Every day stays in the **home octave**: an octave spread was tried and dropped
-  (2026-07-04) — to the untrained ear the target user has, the same Degree an
-  octave apart sounds like a different note, turning the puzzle into a
-  register-recognition test. You get **fewer Guesses than notes** — length minus 2, floor 3 —
-  so even a long tune stays a real challenge rather than a transcription exercise.
+- **Difficulty is a single pool-width lever, labelled by Tier.** _Updated
+  2026-07-10 (supersedes the original length-ramp below)._ Every day is a **fixed
+  5 notes**; difficulty rides on **how wide the Degree pool is**, surfaced to the
+  player as an **Easy / Medium / Hard Tier** badge shown before the first note.
+  The pools are single-Degree steps with the hardest note added last: **Easy** =
+  major pentatonic `[1,2,3,5,6]` (no tendency tones, = Warmup's ceiling),
+  **Medium** = + Ti `[1,2,3,5,6,7]` (leading tone, the easier tendency tone),
+  **Hard** = + Fa `[1,2,3,4,5,6,7]` (full diatonic). The Daily is **diatonic
+  only** — chromatic colours (Fi/Te) were dropped from Daily (they live in Learn),
+  because half-tones are an advanced-learner skill that deters the newcomers Daily
+  is meant to pull in. The weekday→Tier map is a deliberate **sawtooth** (Mon E,
+  Tue M, Wed E, Thu H, Fri M, Sat M, Sun H) so an easy day is never more than one
+  day away. _Why the change:_ length-7 tunes with chromatics read as too hard on a
+  shared, viral, newcomer-facing surface; capping the ceiling (not personalising
+  it) keeps the one-shared-puzzle invariant intact.
+
+  _Original (2026-07 launch, now superseded):_ difficulty ramped by weekday with
+  melody length growing 5→7 and the pool widening to full diatonic + chromatic
+  Fi/Te. Every day stays in the **home octave**: an octave spread was tried and
+  dropped (2026-07-04) — to the untrained ear the target user has, the same Degree
+  an octave apart sounds like a different note, turning the puzzle into a
+  register-recognition test. You get **fewer Guesses than notes** — length minus 2,
+  floor 3 (now a uniform 3, since length is fixed at 5) — so the tune stays a real
+  challenge rather than a transcription exercise.
   Replaying isn't a scored resource: the tune **auto-replays
   after each Guess**, plus **one manual replay per turn** — enough to listen without
   turning memory into the puzzle. A Guess **commits on its last note** (no undo, no

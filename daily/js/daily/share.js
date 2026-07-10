@@ -7,14 +7,16 @@ const EMOJI = { green: '🟩', yellow: '🟨', grey: '⬜' };
 const SHARE_URL = 'https://www.doremingo.com/daily';
 
 /**
- * buildShareText({ day, solved, guesses, maxGuesses, rows })
- *   "DoReMingo Daily #142  4/6
+ * buildShareText({ day, tier, solved, guesses, maxGuesses, rows })
+ *   "DoReMingo Daily #142 · Hard  3/3
  *    🟩🟨⬜🟩🟩
  *    …"
- * A soft fail shows X/6.
+ * A soft fail shows X/3. `tier` (Easy/Medium/Hard) is optional — omitted from
+ * the header when absent (e.g. legacy results with no stored Tier).
  */
-export function buildShareText({ day, solved, guesses, maxGuesses, rows }) {
+export function buildShareText({ day, tier, solved, guesses, maxGuesses, rows }) {
   const score = solved ? `${guesses}/${maxGuesses}` : `X/${maxGuesses}`;
+  const head = tier ? `DoReMingo Daily #${day} · ${tier}` : `DoReMingo Daily #${day}`;
   const grid = rows.map((marks) => marks.map((m) => EMOJI[m]).join('')).join('\n');
-  return `DoReMingo Daily #${day}  ${score}\n${grid}\n${SHARE_URL}`;
+  return `${head}  ${score}\n${grid}\n${SHARE_URL}`;
 }

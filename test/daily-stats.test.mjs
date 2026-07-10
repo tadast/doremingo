@@ -9,7 +9,7 @@ test('first win starts a streak of one', () => {
   assert.equal(s.maxStreak, 1);
   assert.equal(s.wins, 1);
   assert.equal(s.played, 1);
-  assert.deepEqual(s.dist, [0, 0, 1, 0, 0, 0, 0]); // 7 buckets (max 7-note day)
+  assert.deepEqual(s.dist, [0, 0, 1, 0, 0]); // 5 buckets (fixed 5-note day)
 });
 
 test('consecutive solved days extend the streak', () => {
@@ -63,4 +63,17 @@ test('share text is spoiler-free emoji with the right score line', () => {
 
   // the link is the viral loop — it must land on the playable web daily
   assert.ok(win.endsWith('https://www.doremingo.com/daily'));
+});
+
+test('share text carries the difficulty Tier when given', () => {
+  const tiered = buildShareText({
+    day: 142, tier: 'Hard', solved: true, guesses: 3, maxGuesses: 3,
+    rows: [['green', 'green', 'green', 'green', 'green']],
+  });
+  assert.ok(tiered.startsWith('DoReMingo Daily #142 · Hard  3/3'));
+  // no Tier → header falls back to the plain number
+  const plain = buildShareText({
+    day: 142, solved: true, guesses: 3, maxGuesses: 3, rows: [],
+  });
+  assert.ok(plain.startsWith('DoReMingo Daily #142  3/3'));
 });

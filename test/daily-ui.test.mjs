@@ -10,6 +10,7 @@ const DAILY_HTML = `
   <section id="daily-screen" hidden>
     <button id="daily-back-btn"></button>
     <span id="daily-title"></span>
+    <span id="daily-tier" hidden></span>
     <span id="daily-sub"></span>
     <p id="daily-status" hidden></p>
     <div id="daily-tour" hidden>
@@ -59,8 +60,9 @@ const recordingPiano = () => {
   return p;
 };
 
-// 2026-07-03 (a Friday): pool [1..7,'fi'], tune 3 2 7 2 3 1 3 — La (6) absent.
-const FIXED_DATE = new Date(2026, 6, 3);
+// 2026-07-02 (a Thursday): Hard tier, full diatonic pool [1..7], length 5,
+// tune 4 2 5 4 3 — Do (1), La (6), Ti (7) all absent.
+const FIXED_DATE = new Date(2026, 6, 2);
 
 let createDaily;
 
@@ -112,7 +114,7 @@ test('guessing a degree absent from the tune greys out and disables its button',
   assert.ok(la, 'La button exists in the palette');
   assert.equal(la.disabled, false, 'La starts enabled once the tune has played');
 
-  for (let i = 0; i < 7; i++) la.click(); // full guess of La → auto-submits
+  for (let i = 0; i < 5; i++) la.click(); // full guess of La → auto-submits
 
   assert.equal(la.disabled, true, 'La is disabled after being proven absent');
   assert.ok(la.classList.contains('absent'), 'La is marked absent');
@@ -123,13 +125,13 @@ test('degrees present in the tune stay enabled after a guess', async (t) => {
   t.after(() => daily.stop());
   await startAndUnlock(daily);
 
-  // Tune is 3 2 7 2 3 1 3 — guess a row mixing present (1) and absent (4, 5).
-  for (const d of [1, 4, 5, 4, 5, 4, 1]) paletteBtn(d).click();
+  // Tune is 4 2 5 4 3 — guess a row mixing present (5) and absent (1, 6).
+  for (const d of [5, 1, 5, 1, 6]) paletteBtn(d).click();
 
-  assert.equal(paletteBtn(1).disabled, false, 'Do (in the tune) stays enabled');
-  assert.equal(paletteBtn(4).disabled, true, 'Fa (absent) is locked');
-  assert.equal(paletteBtn(5).disabled, true, 'Sol (absent) is locked');
-  assert.ok(!paletteBtn(1).classList.contains('absent'));
+  assert.equal(paletteBtn(5).disabled, false, 'Sol (in the tune) stays enabled');
+  assert.equal(paletteBtn(1).disabled, true, 'Do (absent) is locked');
+  assert.equal(paletteBtn(6).disabled, true, 'La (absent) is locked');
+  assert.ok(!paletteBtn(5).classList.contains('absent'));
 });
 
 test('absent degrees stay locked when the palette re-enables after the next turn', async (t) => {
@@ -137,7 +139,7 @@ test('absent degrees stay locked when the palette re-enables after the next turn
   t.after(() => daily.stop());
   await startAndUnlock(daily);
 
-  for (let i = 0; i < 7; i++) paletteBtn(6).click();
+  for (let i = 0; i < 5; i++) paletteBtn(6).click();
 
   // Auto-replay + re-enable happens each turn; absent buttons must stay locked.
   const la = paletteBtn(6);
@@ -150,7 +152,7 @@ test('resume re-greys degrees proven absent by saved guesses', async (t) => {
   const daily = freshDaily();
   t.after(() => daily.stop());
   await startAndUnlock(daily);
-  for (let i = 0; i < 7; i++) paletteBtn(6).click(); // one committed guess of La
+  for (let i = 0; i < 5; i++) paletteBtn(6).click(); // one committed guess of La
 
   // Re-enter (same day): saved progress replays, La must come back locked.
   await daily.start();

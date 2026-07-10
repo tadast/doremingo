@@ -638,6 +638,8 @@ body.scrolled #home-screen::before { opacity: 1; }
 .meet-help a { color: #b39bbb; }
 @media (pointer: coarse) {
   .kbd-hint { display: none; }
+  /* No physical keyboard → the 1–7 shortcut numbers on the note buttons are noise. */
+  .degree-btn .num { display: none; }
 }
 
 .status { color: #8a7a8f; padding-bottom: 0.75rem; }
@@ -948,10 +950,19 @@ body.scrolled #home-screen::before { opacity: 1; }
 #daily-screen .daily-help-btn:active { transform: translateY(-50%) translateY(2px); }
 .daily-headline {
   display: flex; flex-direction: column; align-items: center;
-  text-align: center; line-height: 1.15;
+  text-align: center; line-height: 1.15; gap: 0.35rem;
 }
 .daily-title { font-family: var(--font-brand); font-weight: 700; font-size: 1.2rem; }
 .daily-sub { font-size: 0.8rem; opacity: 0.7; }
+/* Difficulty Tier badge — shown before play; colour-coded Easy/Medium/Hard. */
+.daily-tier {
+  margin: 0; padding: 0.2rem 0.6rem; border-radius: 999px;
+  font-weight: 700; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: #1a1a1a;
+}
+.daily-tier.tier-easy { background: #7bd88f; }
+.daily-tier.tier-medium { background: #f2c14e; }
+.daily-tier.tier-hard { background: #ef8a7a; }
 
 /* The status line narrates playback (home → tune). Keep its slot reserved even
    when hidden so appearing/disappearing text never shifts the grid below. */

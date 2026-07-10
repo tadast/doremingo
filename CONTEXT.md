@@ -35,6 +35,13 @@ to Resolution), not a punishment — the game keeps its no-fail spirit even wher
 miss. See [ADR-0003].
 _Avoid_: answer, solution
 
+**Tier**:
+A Daily's difficulty — **Easy / Medium / Hard** — shown as a coloured badge before play.
+The Daily's only difficulty lever: length is fixed at 5, so the Tier is entirely how wide the
+Degree pool is (Easy = major pentatonic, Medium = + Ti, Hard = full diatonic). Assigned per
+weekday. See [ADR-0003].
+_Avoid_: Level (that is the Learn Stage), difficulty setting (the player does not choose it)
+
 **Warmup**:
 A short, transient ear-calibration run. It starts on the home chord (Do-Mi-Sol) and
 adds a note each time the player gets three Questions right in a row, climbing to the

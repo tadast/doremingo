@@ -31,6 +31,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     screen: $('daily-screen'),
     back: $('daily-back-btn'),
     title: $('daily-title'),
+    tier: $('daily-tier'),
     sub: $('daily-sub'),
     status: $('daily-status'),
     tour: $('daily-tour'),
@@ -488,7 +489,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   function shareResult() {
     const today = getState().daily.today;
     const text = buildShareText({
-      day: today.day, solved: today.solved, guesses: today.guesses,
+      day: today.day, tier: config?.tier, solved: today.solved, guesses: today.guesses,
       maxGuesses: today.maxGuesses ?? today.rows.length, rows: today.rows,
     });
     const done = () => { el.shareStatus.textContent = 'Copied to clipboard ✓'; };
@@ -511,6 +512,15 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     clearNarration();
     config = practice ? practiceConfig() : dailyConfig(now());
     el.title.textContent = practice ? 'Practice' : `Daily #${config.day}`;
+    // Difficulty Tier badge — shown before the first note plays so players know
+    // what they're in for. Practice has no Tier.
+    if (practice || !config.tier) {
+      el.tier.hidden = true;
+    } else {
+      el.tier.hidden = false;
+      el.tier.textContent = config.tier;
+      el.tier.className = `daily-tier tier-${config.tier.toLowerCase()}`;
+    }
     el.sub.textContent = practice
       ? `${config.length} notes · ${config.pool.length} possible · a tune you might know`
       : `${config.length} notes · ${config.pool.length} possible · guess the tune`;
