@@ -61,7 +61,9 @@ const recordingPiano = () => {
 };
 
 // 2026-07-02 (a Thursday): Hard tier, full diatonic pool [1..7], length 5,
-// tune 4 2 5 4 3 — Do (1), La (6), Ti (7) all absent.
+// tune 1 2 3 5 1 — Fa (4), La (6), Ti (7) all absent.
+// (The tune moved when the seed began folding in the gameId so the two Daily
+// games wouldn't correlate — see dailyConfig.)
 const FIXED_DATE = new Date(2026, 6, 2);
 
 let createDaily;
@@ -125,11 +127,11 @@ test('degrees present in the tune stay enabled after a guess', async (t) => {
   t.after(() => daily.stop());
   await startAndUnlock(daily);
 
-  // Tune is 4 2 5 4 3 — guess a row mixing present (5) and absent (1, 6).
-  for (const d of [5, 1, 5, 1, 6]) paletteBtn(d).click();
+  // Tune is 1 2 3 5 1 — guess a row mixing present (5) and absent (4, 6).
+  for (const d of [5, 4, 5, 4, 6]) paletteBtn(d).click();
 
   assert.equal(paletteBtn(5).disabled, false, 'Sol (in the tune) stays enabled');
-  assert.equal(paletteBtn(1).disabled, true, 'Do (absent) is locked');
+  assert.equal(paletteBtn(4).disabled, true, 'Fa (absent) is locked');
   assert.equal(paletteBtn(6).disabled, true, 'La (absent) is locked');
   assert.ok(!paletteBtn(5).classList.contains('absent'));
 });

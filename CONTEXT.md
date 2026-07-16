@@ -6,14 +6,15 @@ A cheerful browser game that trains the ear to recognise notes, grounded in func
 
 **Mode**:
 A top-level way to play, chosen from the home chooser. _Learn_ is the fixed Level
-progression; _Warmup_ is a short, transient ear-tune; _Daily_ is the shared once-a-day puzzle.
+progression; _Warmup_ is a short, transient ear-tune; _Daily_ is the shelf of shared once-a-day games.
 _Avoid_: game type, screen
 
 **Daily**:
-A single shared puzzle generated from the calendar date — the same for every player that
-day (a shared daily puzzle), built for spoiler-free score sharing. Competitive: one attempt per local
-day, then the screen locks to a result view until the next local midnight. Independent of
-Learn progress. Currently realised as the _Daily Melody_ game. See [ADR-0003].
+A shelf of games, each generating a single shared puzzle from the calendar date — the same
+for every player that day, built for spoiler-free score sharing. Competitive: one attempt per
+_game_ per local day, then that game locks to a result view until the next local midnight.
+Playing any one game keeps the Daily streak alive. Independent of Learn progress. The games
+are _Daily Melody_ and _Daily Sprint_. See [ADR-0003], [ADR-0004].
 _Avoid_: challenge, daily challenge
 
 **Daily Melody**:
@@ -25,21 +26,41 @@ absent is locked out of the palette. The tune auto-replays after each Guess, plu
 per turn. A soft fail once the Guesses run out Reveals the tune rather than ending in a loss.
 _Avoid_: dictation, transcription
 
+**Daily Sprint**:
+The Daily game: sixteen single-note Degree Questions, climbing the four Tiers four at a time
+(Easy → Medium → Hard → Master), with the palette growing as you climb and the whole keyboard
+open on the last four. A stopwatch times the run but never cuts it off — no Question can be
+lost to the clock. Missed notes are Revealed together at the end, if the player asks.
+See [ADR-0004].
+_Avoid_: quiz, time trial, race
+
+**Practice**:
+A sandbox run of a Daily game: fixed content, no stats, no streak, no day lock, replayable
+forever. Where the mechanics are learned before the one real attempt of the day is spent — so
+it is always easier than the game proper (Melody practises on a tune the ear knows; Sprint on
+the home chord alone, with no Tier ladder and no clock). Never a Daily: it cannot be shared,
+and it cannot feed a streak.
+_Avoid_: tutorial (that is Learn's first-run walkthrough), demo, training
+
 **Guess**:
 One submitted row in Daily Melody — a full-length sequence of Degrees, scored per position.
+A Sprint answer is not a Guess; it is a Question answer.
 _Avoid_: attempt, try
 
 **Reveal**:
-On a Daily Melody soft fail, the hidden tune is played in full and named. A teaching beat (kin
-to Resolution), not a punishment — the game keeps its no-fail spirit even where Daily lets you
-miss. See [ADR-0003].
-_Avoid_: answer, solution
+The end-of-game teaching beat: what the player missed is played and named. Daily Melody Reveals
+the hidden tune on a soft fail; Daily Sprint offers a Reveal of each missed note with its
+Resolution once the run is over — the player chooses it over going straight to their result, and
+it stays on offer there. Kin to Resolution, not a punishment — the games keep their no-fail
+spirit even where Daily lets you miss. See [ADR-0003], [ADR-0004].
+_Avoid_: answer, solution, review/recap (a Reveal teaches; a recap is just the grid)
 
 **Tier**:
-A Daily's difficulty — **Easy / Medium / Hard** — shown as a coloured badge before play.
-The Daily's only difficulty lever: length is fixed at 5, so the Tier is entirely how wide the
-Degree pool is (Easy = major pentatonic, Medium = + Ti, Hard = full diatonic). Assigned per
-weekday. See [ADR-0003].
+A Degree-pool width, shown as a coloured badge. Easy = major pentatonic, Medium = + Ti,
+Hard = full diatonic, **Master** = the whole keyboard (diatonic + the five chromatic colours).
+The Daily's only difficulty lever (Melody's length is fixed at 5). Daily Melody plays one Tier
+per day, assigned by weekday, and is **diatonic only — it never uses Master**; Daily Sprint
+climbs all four inside a single run, ending on Master. See [ADR-0003], [ADR-0004].
 _Avoid_: Level (that is the Learn Stage), difficulty setting (the player does not choose it)
 
 **Warmup**:

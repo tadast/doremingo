@@ -12,7 +12,9 @@ import { Store } from './store.js';
 import { createDurableStorage } from './durable-storage.js';
 import { LEVELS, getLevel } from './levels.js';
 import { createDaily } from './daily/ui.js';
-import { defaultDaily, isPlayed } from './daily/stats.js';
+import { createSprint } from './daily/ui-sprint.js';
+import { createPicker } from './daily/ui-picker.js';
+import { defaultDaily, playedAnyToday } from './daily/stats.js';
 import { dayNumber } from './daily/schedule.js';
 import { maybeRequestReview } from './growth/review.js';
 import { offerNotifications, syncNotifications, toggleNotifications } from './growth/notifications.js';
@@ -45,6 +47,8 @@ const el = {
   tabDaily: document.getElementById('tab-daily'),
   tabWarmup: document.getElementById('tab-warmup'),
   dailyScreen: document.getElementById('daily-screen'),
+  pickerScreen: document.getElementById('picker-screen'),
+  sprintScreen: document.getElementById('sprint-screen'),
   dailyHelpBtn: document.getElementById('daily-help-btn'),
   dailyHelpDialog: document.getElementById('daily-help-dialog'),
   dailyHelpClose: document.getElementById('daily-help-close'),
@@ -102,8 +106,8 @@ const el = {
   clearMascot: document.getElementById('clear-mascot'),
 };
 
-const dailyMascot = document.getElementById('daily-mascot');
-for (const m of [el.homeMascot, el.quizMascot, el.clearMascot, dailyMascot]) m.innerHTML = FLAMINGO;
+const dailyMascots = ['daily-mascot', 'sprint-mascot', 'picker-mascot'].map((id) => document.getElementById(id));
+for (const m of [el.homeMascot, el.quizMascot, el.clearMascot, ...dailyMascots]) m.innerHTML = FLAMINGO;
 
 // The DOM adapter the Round drives, and the meet/notes screens reuse.
 const view = createGameView(el);
@@ -140,15 +144,38 @@ function onDailyFinished() {
   }, 2000);
 }
 
-// Daily mode runs its own controller (its own brain + DOM), like a mini-app.
+// Daily is a shelf of games (ADR-0004). Each game runs its own controller (its
+// own brain + DOM), like a mini-app; the picker is the shelf they sit on. A
+// game's back button returns to the picker, and the picker's returns to Learn.
 const daily = createDaily({
   piano,
   store,
   getState: () => state,
   showScreen,
-  goHome: goLearn, // Daily's exit now lands on the Learn root (tab bar handles modes)
+  goHome: () => openPicker(),
   celebrate,
   onFinished: onDailyFinished,
+  ...dailyDevOpts,
+});
+
+const sprint = createSprint({
+  piano,
+  store,
+  getState: () => state,
+  showScreen,
+  goBack: () => openPicker(),
+  celebrate,
+  onFinished: onDailyFinished,
+  ...dailyDevOpts,
+});
+
+const dailyGames = { melody: daily, sprint };
+
+const picker = createPicker({
+  getState: () => state,
+  showScreen,
+  goBack: () => goLearn(),
+  openGame: (gameId) => openDailyGame(gameId),
   ...dailyDevOpts,
 });
 
@@ -187,7 +214,7 @@ function confettiBurst() {
 }
 
 function showScreen(screen) {
-  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen, el.theoryScreen, el.aboutScreen, el.notesScreen, el.dailyScreen]) {
+  for (const s of [el.homeScreen, el.quizScreen, el.clearScreen, el.meetScreen, el.theoryScreen, el.aboutScreen, el.notesScreen, el.dailyScreen, el.pickerScreen, el.sprintScreen]) {
     s.hidden = s !== screen;
   }
   // The bottom tab bar belongs to the mode roots only; immersive play (quiz,
@@ -195,8 +222,9 @@ function showScreen(screen) {
   syncTabBar(screen);
   // The clear-screen button actions only make sense on the clear screen.
   if (screen !== el.clearScreen) clearActions = null;
-  // Leaving the Daily screen tears down its countdown timer + pending audio.
+  // Leaving a Daily game's screen tears down its countdown/clock + pending audio.
   if (screen !== el.dailyScreen) daily.stop();
+  if (screen !== el.sprintScreen) sprint.stop();
   // Hard-close the menu on every switch — no leftover wobble when home reappears.
   // The scrim must go too: it's a full-screen overlay, and since it's hidden via
   // the popover's animationend, a mid-animation screen switch would orphan it
@@ -256,12 +284,24 @@ function syncTabBar(screen) {
   else el.tabLearn.removeAttribute('aria-current');
 }
 
-// Daily mode — one shared, date-seeded puzzle a day. Self-contained controller.
+// Daily mode — the shelf. Entering Daily lands on the picker; each game is a
+// sub-route beneath it, so a shared link opens the game it was shared from.
 function startDaily() {
+  openPicker();
+}
+
+function openPicker() {
   leaveQuiz();
   activeMode = 'daily';
-  setRoute('#/daily');
-  daily.start();
+  setRoute(DAILY_ONLY ? '#/' : '#/daily');
+  picker.start();
+}
+
+function openDailyGame(gameId) {
+  leaveQuiz();
+  activeMode = 'daily';
+  setRoute(DAILY_ONLY ? `#/${gameId}` : `#/daily/${gameId}`);
+  dailyGames[gameId].start();
 }
 
 // The Learn level map — the app's home root.
@@ -310,8 +350,23 @@ async function openNotes() {
   }
 }
 
+// Which Daily game a hash names, if any. Both spellings are honoured: the app
+// routes #/daily/sprint, while the /daily/ web deploy — where the whole site IS
+// Daily — gets the shorter #/sprint that share links use.
+function dailyGameFromHash(hash) {
+  const m = hash.match(/^#\/(?:daily\/)?(melody|sprint)$/);
+  return m ? m[1] : null;
+}
+
 function applyRoute() {
-  if (DAILY_ONLY) { switchMode('daily'); return; }
+  // The /daily/ deploy is Daily-only: no Learn, no Warmup, so every route here
+  // is either a game or the picker.
+  if (DAILY_ONLY) {
+    const game = dailyGameFromHash(location.hash);
+    if (game) openDailyGame(game);
+    else openPicker();
+    return;
+  }
   const levelMatch = location.hash.match(/^#\/level\/(\d+)$/);
   if (levelMatch && getLevel(Number(levelMatch[1]))) {
     setRoute(location.hash);
@@ -326,6 +381,8 @@ function applyRoute() {
   if (location.hash === '#/about') { openAbout(); return; }
   if (location.hash === '#/notes') { openNotes(); return; }
   if (location.hash === '#/warmup') { switchMode('warmup'); return; }
+  const dailyGame = dailyGameFromHash(location.hash);
+  if (dailyGame) { openDailyGame(dailyGame); return; }
   if (location.hash === '#/daily') { switchMode('daily'); return; }
   if (location.hash === '#/learn') { switchMode('learn'); return; }
   if (state.tutorialDone) goLearn();
@@ -801,7 +858,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') for (const
 const modes = {
   learn: { start: goLearn, stop: leaveQuiz },
   warmup: { start: startWarmup, stop: leaveQuiz },
-  daily: { start: startDaily, stop: () => daily.stop() },
+  daily: { start: startDaily, stop: () => { daily.stop(); sprint.stop(); } },
 };
 
 function switchMode(name) {
@@ -814,26 +871,36 @@ el.tabLearn.addEventListener('click', () => switchMode('learn'));
 el.tabDaily.addEventListener('click', () => switchMode('daily'));
 el.tabWarmup.addEventListener('click', () => switchMode('warmup'));
 
-// Daily is a shareable cold-entry point — give it the rules in an in-place
+// Each Daily game is a shareable cold-entry point — someone can land on it from a
+// friend's link having never seen the app — so each gets its rules in an in-place
 // overlay. A modal (not a screen switch) so the in-progress puzzle isn't torn
 // down and the day's guesses survive. A plain overlay rather than <dialog>,
 // which needs WKWebView 15.4 (the app targets iOS 15.0).
-function openDailyHelp() {
-  el.dailyHelpDialog.hidden = false;
-  el.dailyHelpClose.focus();
+function makeHelpModal({ btn, dialog, closeBtn }) {
+  const open = () => { dialog.hidden = false; closeBtn.focus(); };
+  const close = () => {
+    if (dialog.hidden) return;
+    dialog.hidden = true;
+    btn.focus(); // return focus to the trigger
+  };
+  btn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  // Tap the backdrop (outside the card) to dismiss.
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  return { open, close };
 }
-function closeDailyHelp() {
-  if (el.dailyHelpDialog.hidden) return;
-  el.dailyHelpDialog.hidden = true;
-  el.dailyHelpBtn.focus(); // return focus to the trigger
-}
-el.dailyHelpBtn.addEventListener('click', openDailyHelp);
-el.dailyHelpClose.addEventListener('click', closeDailyHelp);
-// Tap the backdrop (outside the card) to dismiss.
-el.dailyHelpDialog.addEventListener('click', (e) => {
-  if (e.target === el.dailyHelpDialog) closeDailyHelp();
+
+makeHelpModal({
+  btn: el.dailyHelpBtn,
+  dialog: el.dailyHelpDialog,
+  closeBtn: el.dailyHelpClose,
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDailyHelp(); });
+makeHelpModal({
+  btn: document.getElementById('sprint-help-btn'),
+  dialog: document.getElementById('sprint-help-dialog'),
+  closeBtn: document.getElementById('sprint-help-close'),
+});
 
 // Reset clears Learn progress — but NOT Daily. Daily is one attempt per day, so
 // letting a reset wipe today's guesses (or the streak) would be a free retry.
@@ -852,7 +919,9 @@ function resetProgress(back) {
 // menu item stays hidden on web, where there is nothing to schedule).
 const remindersBtn = document.getElementById('menu-reminders');
 const remindersLabel = document.getElementById('menu-reminders-label');
-const playedTodayNow = () => isPlayed(state.daily, dayNumber(new Date()));
+// Any Daily game finished today counts — the reminder is "you haven't played",
+// not "you haven't played Melody".
+const playedTodayNow = () => playedAnyToday(state.daily, dayNumber(new Date()));
 const renderRemindersItem = () => {
   remindersLabel.textContent = `Daily reminder: ${state.growth?.notify === true ? 'on' : 'off'}`;
 };

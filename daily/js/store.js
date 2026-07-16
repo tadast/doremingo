@@ -3,7 +3,11 @@
 import { defaultDaily } from './daily/stats.js';
 
 const KEY = 'doremingo';
-const VERSION = 1;
+// 2: Daily became a shelf of games — `daily` gained per-game blocks under
+// `games` and a shared streak (ADR-0004). Bumping discards saved state (see
+// load()); that was acceptable here because the game had no players yet. It
+// will NOT be acceptable at the next bump — write a migration then.
+const VERSION = 2;
 
 export function defaultState() {
   return {
@@ -31,7 +35,9 @@ export class Store {
       const raw = this.storage.getItem(KEY);
       if (!raw) return defaultState();
       const state = JSON.parse(raw);
-      if (state.version !== VERSION) return defaultState(); // future: migrate
+      // No migrations yet — an old save is dropped wholesale. Fine while the
+      // only player is the author; once there are real saves this must migrate.
+      if (state.version !== VERSION) return defaultState();
       return { ...defaultState(), ...state };
     } catch {
       return defaultState();

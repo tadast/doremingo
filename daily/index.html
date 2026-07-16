@@ -129,7 +129,7 @@
       <p id="version-tag" class="footer"></p>
     </section>
 
-    <section id="about-screen" class="screen" hidden>
+    <section id="about-screen" class="screen screen-tall" hidden>
       <header class="quiz-header">
         <button id="about-back-btn" class="back-btn" aria-label="back to all levels">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -148,7 +148,7 @@
       </article>
     </section>
 
-    <section id="notes-screen" class="screen" hidden>
+    <section id="notes-screen" class="screen screen-tall" hidden>
       <header class="quiz-header">
         <button id="notes-back-btn" class="back-btn" aria-label="back to all levels">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -159,7 +159,7 @@
       <div id="notes-list" class="notes-list"></div>
     </section>
 
-    <section id="theory-screen" class="screen" hidden>
+    <section id="theory-screen" class="screen screen-tall" hidden>
       <header class="quiz-header">
         <button id="theory-back-btn" class="back-btn" aria-label="back to all levels">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -180,7 +180,7 @@
       <p id="meet-help" class="meet-help" hidden></p>
     </section>
 
-    <section id="quiz-screen" class="screen quiz-screen" hidden>
+    <section id="quiz-screen" class="screen screen-app quiz-screen" hidden>
       <header class="quiz-header">
         <button id="home-btn" class="back-btn" aria-label="back to all levels">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -210,8 +210,123 @@
       <p class="status kbd-hint">Keys: 1–7 answer · space replays · C plays home</p>
     </section>
 
-    <section id="daily-screen" class="screen" hidden>
-      <header class="quiz-header">
+    <!-- The Daily picker — the shelf. Each game has its own day lock; the streak
+         below is Daily-wide and any one game keeps it alive (ADR-0004). -->
+    <section id="picker-screen" class="screen screen-app" hidden>
+      <header class="quiz-header titled">
+        <button id="picker-back-btn" class="back-btn" aria-label="back to the levels">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="daily-headline">
+          <span id="picker-title" class="daily-title">Daily</span>
+          <span id="picker-sub" class="daily-sub"></span>
+        </div>
+      </header>
+
+      <div class="daily-main">
+        <div id="picker-cards" class="picker-cards"></div>
+        <p id="picker-streak" class="picker-streak" aria-live="polite"></p>
+      </div>
+
+      <div class="mascot-stage">
+        <div id="picker-mascot" class="mascot mascot-sm"></div>
+      </div>
+    </section>
+
+    <!-- Daily Sprint — sixteen one-tap Questions climbing Easy → Medium → Hard → Master.
+         The clock scores the run; it never cuts it off (ADR-0004). -->
+    <section id="sprint-screen" class="screen screen-app" hidden>
+      <header class="quiz-header titled">
+        <button id="sprint-back-btn" class="back-btn" aria-label="leave the sprint">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="daily-headline">
+          <span id="sprint-title" class="daily-title">Sprint</span>
+          <span id="sprint-tier" class="daily-tier" hidden></span>
+          <span id="sprint-sub" class="daily-sub"></span>
+        </div>
+        <div class="sprint-meters header-action">
+          <span id="sprint-clock" class="sprint-clock">0:00</span>
+          <span id="sprint-progress" class="sprint-progress"></span>
+        </div>
+        <button id="sprint-help-btn" class="menu-btn sprint-help-btn header-action" aria-label="How to play">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>
+        </button>
+      </header>
+
+      <div id="sprint-help-dialog" class="help-overlay" hidden>
+        <div class="help-dialog" role="dialog" aria-modal="true" aria-label="How to play Sprint">
+          <h2>How to play Sprint</h2>
+          <p>Sixteen notes, one tap each. Hear a note, tap which one it was in Do-Re-Mi.</p>
+          <p>You'll hear <b>home</b> 🏠 first — a short chord pattern that shows your ear where the key sits. Every note after that is heard against it.</p>
+          <p><b>It gets harder in fours.</b> Four notes from five (<b>Easy</b>), then Ti joins (<b>Medium</b>), then Fa (<b>Hard</b>), and finally the <b>whole keyboard</b> — black keys and all (<b>Master</b>). More keys light up each time, and home replays so you can re-find your feet.</p>
+          <p>Master is meant to be hard. Miss the lot and you've still got twelve — it's a bonus row, not a wall.</p>
+          <p>The grid fills as you go — green for right, grey for missed — and shows where you are.</p>
+          <p><b>The clock never stops you.</b> It times your run for the score, but no note ever runs out: think as long as you like, and replay it as often as you like.</p>
+          <p>At the end you can hear the ones you missed, each played and walked back home. Then share your grid — it gives nothing away.</p>
+          <button id="sprint-help-close" class="big-btn">Got it</button>
+        </div>
+      </div>
+
+      <p id="sprint-status" class="status" hidden></p>
+
+      <!-- Practice-only coach bubble: home → one note → your task. -->
+      <div id="sprint-tour" class="coach-bubble" role="status" aria-live="polite" hidden>
+        <p id="sprint-tour-text"></p>
+        <button id="sprint-tour-btn" class="big-btn"></button>
+        <button id="sprint-tour-skip" class="tour-skip">Skip the tour</button>
+      </div>
+
+      <!-- The grid comes FIRST and never hides, so it anchors the layout: the
+           play row, keyboard and result all swap out beneath it and the screen
+           doesn't jump between playing and finished. -->
+      <div class="daily-main sprint-main">
+        <!-- The live grid: one lane per Tier, filling as you go. Doubles as the
+             "where am I" marker during the run and the map during the Reveal —
+             and it's the same shape the shared result grid pastes as. -->
+        <div id="sprint-board" class="daily-board sprint-board" aria-label="your run"></div>
+
+        <div id="sprint-play" class="daily-play">
+          <button id="sprint-start-btn" class="big-btn">▶ Start the Sprint</button>
+          <button id="sprint-replay-btn" class="big-btn secondary" hidden>🔁 Hear it again</button>
+        </div>
+
+        <div id="sprint-degree-buttons" class="degrees daily-palette"></div>
+
+        <div class="daily-practice-row">
+          <button id="sprint-practice-btn" class="chip-btn" hidden>🎓 Practice run</button>
+        </div>
+
+        <!-- The Reveal runs outside the result card: it walks the missed notes
+             home one at a time, with the keyboard still on screen to light up. -->
+        <p id="sprint-reveal" class="daily-reveal" aria-live="polite" hidden></p>
+
+        <!-- End of the run: the Reveal is offered, never forced (ADR-0004). -->
+        <div id="sprint-finish" class="daily-play" hidden>
+          <button id="sprint-reveal-btn" class="big-btn">🔁 Hear what you missed</button>
+          <button id="sprint-results-btn" class="big-btn secondary">See results</button>
+        </div>
+
+        <div id="sprint-result" class="daily-result" hidden>
+          <h2 id="sprint-result-title"></h2>
+          <div id="sprint-stats" class="daily-stats"></div>
+          <button id="sprint-share-btn" class="big-btn">Share result</button>
+          <!-- Second door to the same Reveal: taking "See results" first (or
+               coming back tomorrow-morning-brain) shouldn't lose the teaching. -->
+          <button id="sprint-result-reveal-btn" class="big-btn secondary" hidden>🔁 Hear what you missed</button>
+          <p id="sprint-share-status" class="status" aria-live="polite"></p>
+          <p id="sprint-countdown" class="status"></p>
+        </div>
+      </div>
+
+      <div id="sprint-mascot-stage" class="mascot-stage">
+        <p id="sprint-feedback" class="feedback" aria-live="polite"></p>
+        <div id="sprint-mascot" class="mascot mascot-sm"></div>
+      </div>
+    </section>
+
+    <section id="daily-screen" class="screen screen-app" hidden>
+      <header class="quiz-header titled">
         <button id="daily-back-btn" class="back-btn" aria-label="leave the daily puzzle">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -220,7 +335,7 @@
           <span id="daily-tier" class="daily-tier" hidden></span>
           <span id="daily-sub" class="daily-sub"></span>
         </div>
-        <button id="daily-help-btn" class="menu-btn daily-help-btn" aria-label="How to play">
+        <button id="daily-help-btn" class="menu-btn daily-help-btn header-action" aria-label="How to play">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>
         </button>
       </header>

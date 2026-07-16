@@ -21,7 +21,8 @@ import { PRACTICE_TUNE, practiceConfig, practiceMelody } from './practice.js';
 import { tourSteps } from './tour.js';
 import { DAILY_GAMES } from './registry.js';
 import { buildShareText } from './share.js';
-import { defaultDaily, recordResult, isPlayed, winPercent } from './stats.js';
+import { defaultDaily, recordResult, isPlayed, winPercent, gameStats } from './stats.js';
+import { copyShare, createCountdown } from './ui-common.js';
 
 const degName = (d, mode) => degreeInfo(d, mode).name;
 
@@ -63,10 +64,14 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   let pending = [];
   let manualReplayUsed = false; // one manual replay per turn; reset on each Guess
   let started = false; // has the first "Play the tune" tap unlocked + played audio?
-  let countdownTimer = null;
   let practice = false; // sandbox round: fixed tune, no stats, no lock, no resume
   let tourStep = -1; // -1 = tour inactive; 0..2 = current coach-bubble step (practice only)
   let narrationTimers = [];
+
+  const countdown = createCountdown({ el: el.countdown, now, isVisible: () => !el.screen.hidden });
+
+  /** This game's stats block — Daily keeps one per game (see stats.js). */
+  const melodyStats = () => gameStats(getState().daily, 'melody');
 
   // ---- audio ----
 
@@ -230,7 +235,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     if (practice) return;
     const state = getState();
     state.daily ??= defaultDaily();
-    state.daily.progress = guesses ? { day: config.day, guesses } : null;
+    state.daily.games.melody.progress = guesses ? { day: config.day, guesses } : null;
     store.save(state);
   }
 
@@ -386,8 +391,8 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     }
 
     const state = getState();
-    if (!isPlayed(state.daily, config.day)) {
-      state.daily = recordResult(state.daily ?? defaultDaily(), {
+    if (!isPlayed(state.daily, config.day, 'melody')) {
+      state.daily = recordResult(state.daily ?? defaultDaily(), 'melody', {
         day: config.day,
         solved: result.solved,
         guesses: result.guesses,
@@ -416,8 +421,11 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     }
   }
 
+  // The streak is Daily-wide (any game keeps it alive); everything else here is
+  // Melody's own block — see stats.js.
   function renderStats(daily, highlightGuesses, buckets) {
-    const dist = daily.dist.slice(0, buckets); // only as many rows as the day has Guesses
+    const stats = gameStats(daily, 'melody');
+    const dist = stats.dist.slice(0, buckets); // only as many rows as the day has Guesses
     const max = Math.max(1, ...dist);
     const bars = dist
       .map((n, i) => {
@@ -429,35 +437,19 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
       .join('');
     el.stats.innerHTML =
       `<div class="stat-figures">`
-      + `<span><b>${daily.played}</b><small>played</small></span>`
-      + `<span><b>${winPercent(daily)}%</b><small>solved</small></span>`
+      + `<span><b>${stats.played}</b><small>played</small></span>`
+      + `<span><b>${winPercent(stats)}%</b><small>solved</small></span>`
       + `<span><b>${daily.streak}</b><small>streak 🔥</small></span>`
       + `<span><b>${daily.maxStreak}</b><small>max streak</small></span>`
       + `</div>`
       + `<p class="dist-title">Guess distribution</p><div class="dist">${bars}</div>`;
   }
 
-  function startCountdown() {
-    const tick = () => {
-      if (el.screen.hidden) { clearInterval(countdownTimer); countdownTimer = null; return; }
-      const d = now();
-      const next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
-      const ms = next - d;
-      const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
-      const m = String(Math.floor((ms % 3600000) / 60000)).padStart(2, '0');
-      const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
-      el.countdown.textContent = `Next puzzle in ${h}:${m}:${s}`;
-    };
-    clearInterval(countdownTimer);
-    tick();
-    countdownTimer = setInterval(tick, 1000);
-  }
-
   // live=true right after finishing (we have the puzzle to reveal/play);
   // live=false on a locked re-entry (rebuild from stored stats only).
   function showResult(live) {
     clearNarration();
-    const today = getState().daily.today;
+    const today = melodyStats().today;
     const max = today.maxGuesses ?? config?.maxGuesses ?? today.rows.length;
     el.status.hidden = true;
     el.play.hidden = true;
@@ -483,23 +475,18 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     }
 
     renderStats(getState().daily, today.solved ? today.guesses : null, max);
-    startCountdown();
+    countdown.start();
   }
 
   function shareResult() {
-    const today = getState().daily.today;
-    const text = buildShareText({
-      day: today.day, tier: config?.tier, solved: today.solved, guesses: today.guesses,
-      maxGuesses: today.maxGuesses ?? today.rows.length, rows: today.rows,
-    });
-    const done = () => { el.shareStatus.textContent = 'Copied to clipboard ✓'; };
-    if (navigator.share) {
-      navigator.share({ text }).catch(() => navigator.clipboard?.writeText(text).then(done));
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(done, () => { el.shareStatus.textContent = text; });
-    } else {
-      el.shareStatus.textContent = text;
-    }
+    const today = melodyStats().today;
+    copyShare(
+      buildShareText({
+        day: today.day, tier: config?.tier, solved: today.solved, guesses: today.guesses,
+        maxGuesses: today.maxGuesses ?? today.rows.length, rows: today.rows,
+      }),
+      el.shareStatus,
+    );
   }
 
   // ---- lifecycle ----
@@ -510,8 +497,8 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   function enter(isPractice) {
     practice = isPractice;
     clearNarration();
-    config = practice ? practiceConfig() : dailyConfig(now());
-    el.title.textContent = practice ? 'Practice' : `Daily #${config.day}`;
+    config = practice ? practiceConfig() : dailyConfig(now(), 'melody');
+    el.title.textContent = practice ? 'Practice' : `Melody #${config.day}`;
     // Difficulty Tier badge — shown before the first note plays so players know
     // what they're in for. Practice has no Tier.
     if (practice || !config.tier) {
@@ -534,7 +521,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     state.daily ??= defaultDaily();
 
     // Already finished today's puzzle → locked result view, no audio needed.
-    if (!practice && isPlayed(state.daily, config.day)) {
+    if (!practice && isPlayed(state.daily, config.day, 'melody')) {
       el.play.hidden = true; el.palette.hidden = true; el.mascotStage.hidden = true;
       puzzle = null;
       showScreen(el.screen);
@@ -555,7 +542,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     // Audio still needs a fresh user gesture, so the tune re-unlocks on Play; only
     // the committed guesses (and the spent guess count) are restored.
     // (Practice has no stakes, so it always deals fresh.)
-    const saved = state.daily.progress;
+    const saved = gameStats(state.daily, 'melody').progress;
     if (!practice && saved && saved.day === config.day) {
       for (const g of saved.guesses) { if (!game.done) game.submit(g); }
     }
@@ -566,7 +553,9 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     // Practice entry point: hidden while practising; extra-inviting before the
     // player's first-ever Daily (this game is hard cold — see the tutorial ask).
     el.practiceBtn.hidden = practice;
-    el.practiceBtn.textContent = state.daily.played === 0 ? '🎓 New? Try a practice tune' : '🎓 Practice tune';
+    el.practiceBtn.textContent = gameStats(state.daily, 'melody').played === 0
+      ? '🎓 New? Try a practice tune'
+      : '🎓 Practice tune';
     buildPalette();
     setPaletteEnabled(false); // wait for the first tap (which unlocks audio + plays)
     for (const row of game.rows) lockAbsentDegrees(row.guess); // re-grey proven-absent degrees
@@ -587,8 +576,7 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
   }
 
   function stop() {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
+    countdown.stop();
     clearNarration();
     piano.stopAll?.();
   }

@@ -36,7 +36,11 @@ deliberate and not obvious.
   because half-tones are an advanced-learner skill that deters the newcomers Daily
   is meant to pull in. The weekday→Tier map is a deliberate **sawtooth** (Mon E,
   Tue M, Wed E, Thu H, Fri M, Sat M, Sun H) so an easy day is never more than one
-  day away. _Why the change:_ length-7 tunes with chromatics read as too hard on a
+  day away. _Scope note (2026-07-16): "diatonic only" still holds for **Daily
+  Melody**, and for the reason given — a chromatic day would make a newcomer's one
+  attempt unwinnable. It does **not** bind Daily Sprint, whose pool widens per
+  round rather than per day; its Master Tier opens the whole keyboard for the last
+  four Questions of sixteen. See [ADR-0004]._ _Why the change:_ length-7 tunes with chromatics read as too hard on a
   shared, viral, newcomer-facing surface; capping the ceiling (not personalising
   it) keeps the one-shared-puzzle invariant intact.
 
@@ -66,6 +70,11 @@ The shell is built **game-agnostic** so the daily concept can be trialled: routi
 seeding, the day lock, stats and share live in `js/daily/`, and a `registry.js` keys
 games by `gameId`. Only `melody` is implemented; `sprint` (seeded time-trial) and
 `climb` (seeded timed ladder) are registered stubs to trial later and pick the keeper.
+
+  _Updated 2026-07-16: **"pick the keeper" is superseded by [ADR-0004]** — Daily is a
+  shelf, not a trial. `sprint` shipped alongside `melody`; `climb` stays a stub.
+  ADR-0004 also generalises **Tier** beyond this ADR's per-weekday framing, and changes
+  the streak so a soft fail here no longer breaks it._
 
 Implementation mirrors the Round/Warmup split: pure, tested brains (`rng`, `schedule`,
 `puzzle`, `feedback`, `melody`, `stats`, `share`) under `js/daily/`, with a single impure

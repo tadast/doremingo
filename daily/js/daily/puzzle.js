@@ -11,7 +11,7 @@ import { degreeToMidi } from '../theory.js';
 import { pick } from './rng.js';
 
 /** Seeded tonic in G3–F#4, the same range Learn's random-key levels use. */
-function seededTonic(rng) {
+export function seededTonic(rng) {
   return 55 + Math.floor(rng() * 12);
 }
 

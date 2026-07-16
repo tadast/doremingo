@@ -7,17 +7,32 @@ import {
 } from '../js/growth/notifications.js';
 import { VERSION } from '../js/version.js';
 
-const solvedDaily = (over = {}) => ({
-  today: { solved: true }, wins: 3, streak: 1, played: 3, ...over,
+// Daily's shape: a shared streak, plus one stats block per game (ADR-0004).
+const solvedDaily = ({ melody = {}, sprint = {}, ...over } = {}) => ({
+  streak: 1,
+  games: {
+    melody: { today: { solved: true }, wins: 3, played: 3, ...melody },
+    sprint: { today: null, played: 0, ...sprint },
+  },
+  ...over,
 });
 
 test('review: asks on 3rd solve or 7-day streak, never after a fail, once per version', () => {
   assert.equal(shouldRequestReview({ daily: solvedDaily() }), true);
-  assert.equal(shouldRequestReview({ daily: solvedDaily({ wins: 2, streak: 7 }) }), true);
-  assert.equal(shouldRequestReview({ daily: solvedDaily({ wins: 2, streak: 2 }) }), false);
-  assert.equal(shouldRequestReview({ daily: solvedDaily({ today: { solved: false }, wins: 9 }) }), false);
+  assert.equal(shouldRequestReview({ daily: solvedDaily({ melody: { wins: 2 }, streak: 7 }) }), true);
+  assert.equal(shouldRequestReview({ daily: solvedDaily({ melody: { wins: 2 }, streak: 2 }) }), false);
+  assert.equal(shouldRequestReview({ daily: solvedDaily({ melody: { today: { solved: false }, wins: 9 } }) }), false);
   assert.equal(shouldRequestReview({ daily: solvedDaily(), promptedVersion: VERSION }), false);
   assert.equal(shouldRequestReview({ daily: null }), false);
+});
+
+test('review: a clean-sweep Sprint is a delight moment too, a middling one is not', () => {
+  const swept = { today: { correct: 12, rounds: 12 } };
+  const middling = { today: { correct: 7, rounds: 12 } };
+  const noMelodyWin = { today: null, wins: 3 };
+
+  assert.equal(shouldRequestReview({ daily: solvedDaily({ melody: noMelodyWin, sprint: swept }) }), true);
+  assert.equal(shouldRequestReview({ daily: solvedDaily({ melody: noMelodyWin, sprint: middling }) }), false);
 });
 
 function fakeCapacitor({ native = true, plugins = {} } = {}) {

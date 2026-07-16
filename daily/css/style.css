@@ -273,20 +273,28 @@ h1 {
 }
 .quiz-header .bar-track { flex: 1; }
 
-/* Info screens are top-aligned (not vertically centred by body) so the back
-   button always sits at the very top, even when the content is short. */
-#about-screen,
-#notes-screen,
-#theory-screen {
+/* ─── Screen layout contract ───────────────────────────────────────────────
+   Every <section class="screen"> is vertically CENTRED by the body grid. That
+   is the default, and it suits short screens (home, clear, meet).
+   A screen that should instead start at the top must say so — pick one:
+
+     .screen.screen-tall   top-aligned, full height, normal flow.
+                           For read-only pages (about, notes, theory).
+     .screen.screen-app    top-aligned, full height, flex column.
+                           For play surfaces: lets .quiz-main/.daily-main take
+                           flex:1 and pins Mingo to the bottom via margin-top:auto.
+
+   A screen with a centred title also needs .quiz-header.titled (see below).
+   These are CLASSES, not ids, on purpose: the old rules listed screens by id,
+   so a new page silently inherited the centred default and floated with a gap
+   above it. If you add a screen, pick a class here — don't add an id to a list.
+   ────────────────────────────────────────────────────────────────────────── */
+.screen-tall,
+.screen-app {
   align-self: start;
   min-height: 100dvh;
 }
-
-/* Same as .quiz-screen: column fills the viewport so Mingo anchors at the
-   bottom (margin-top:auto on the mascot stage) instead of floating mid-screen. */
-#daily-screen {
-  align-self: start;
-  min-height: 100dvh;
+.screen-app {
   display: flex;
   flex-direction: column;
 }
@@ -309,12 +317,8 @@ h1 {
 .daily-main > .daily-palette { margin: 0; }
 
 /* Level view fills the viewport: nav at top, question/answers centred in the
-   thumb zone, Mingo anchored at the bottom talking up through a bubble. */
-.quiz-screen {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
+   thumb zone, Mingo anchored at the bottom talking up through a bubble.
+   (Its layout comes from .screen-app — see the screen layout contract above.) */
 .quiz-main {
   flex: 1;
   display: flex;
@@ -927,27 +931,35 @@ body.scrolled #home-screen::before { opacity: 1; }
 
 /* ---------- Daily mode ---------- */
 
-/* Centre the title block across the full width; the back button floats over the
-   left so it doesn't shove the title off-centre. Extra vertical padding keeps the
-   header from crowding the top edge / notch. */
-#daily-screen .quiz-header {
+/* ─── .quiz-header.titled — a centred page title ───────────────────────────
+   Opt in with <header class="quiz-header titled"> when the header carries a
+   .daily-headline. The title block centres across the full width; the side
+   controls FLOAT over the edges, so nothing beside the title can shove it
+   off-centre. Extra vertical padding keeps the header off the notch.
+
+   Without `titled`, a plain .quiz-header is a left-to-right flex row (what the
+   level view wants, where the progress bar takes the space). Don't centre that.
+   Anything you drop into a titled header needs .back-btn or .header-action so
+   it floats too — otherwise it re-enters the flow and pushes the title across.
+   (This was #daily-screen-only before; the two screens added next to it missed
+   the rule and drifted off-centre. Hence a class.)
+   ────────────────────────────────────────────────────────────────────────── */
+.quiz-header.titled {
   justify-content: center;
   padding-top: max(44px, calc(env(safe-area-inset-top) + 24px));
   padding-bottom: 26px;
 }
-#daily-screen #daily-back-btn {
+.quiz-header.titled > .back-btn,
+.quiz-header.titled > .header-action {
   position: absolute;
-  left: max(24px, env(safe-area-inset-left));
   top: 50%;
   transform: translateY(-50%);
 }
-#daily-screen .daily-help-btn {
-  position: absolute;
-  right: max(24px, env(safe-area-inset-right));
-  top: 50%;
-  transform: translateY(-50%);
-}
-#daily-screen .daily-help-btn:active { transform: translateY(-50%) translateY(2px); }
+.quiz-header.titled > .back-btn { left: max(24px, env(safe-area-inset-left)); }
+.quiz-header.titled > .header-action { right: max(24px, env(safe-area-inset-right)); }
+/* Keep the centring transform when pressed, or the button leaps half its height. */
+.quiz-header.titled > .back-btn:active,
+.quiz-header.titled > .header-action:active { transform: translateY(-50%) translateY(2px); }
 .daily-headline {
   display: flex; flex-direction: column; align-items: center;
   text-align: center; line-height: 1.15; gap: 0.35rem;
@@ -963,10 +975,97 @@ body.scrolled #home-screen::before { opacity: 1; }
 .daily-tier.tier-easy { background: #7bd88f; }
 .daily-tier.tier-medium { background: #f2c14e; }
 .daily-tier.tier-hard { background: #ef8a7a; }
+/* Master (Sprint's last four — the whole keyboard, black keys included) reads as
+   a step beyond Hard rather than another shade of warning. */
+.daily-tier.tier-master { background: #b39ddb; color: #241a33; }
+
+/* ---- the Daily picker — one card per game on the shelf ---- */
+.picker-cards { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+.picker-card {
+  display: flex; align-items: center; gap: 0.8rem;
+  width: 100%; padding: 0.85rem 1rem; text-align: left;
+  border: 2px solid rgba(0, 0, 0, 0.08); border-radius: 18px;
+  background: var(--card, #fff); color: inherit; cursor: pointer;
+  font: inherit; transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.06);
+}
+.picker-card:active { transform: translateY(2px); box-shadow: none; }
+/* A played game stays tappable — its result view is where Share lives — but it
+   reads as done rather than inviting. */
+.picker-card.played { opacity: 0.72; }
+.picker-icon { font-size: 1.8rem; line-height: 1; }
+.picker-body { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 0; }
+.picker-name {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+  font-family: var(--font-brand); font-weight: 700; font-size: 1.05rem;
+}
+.picker-blurb { font-size: 0.78rem; opacity: 0.7; }
+.picker-go { font-weight: 700; color: var(--berry); white-space: nowrap; }
+.picker-done { font-size: 0.78rem; font-weight: 600; opacity: 0.8; white-space: nowrap; }
+.picker-streak { text-align: center; font-size: 0.85rem; font-weight: 600; margin: 1rem 0 0; }
+
+/* ---- Daily Sprint ---- */
+/* Clock + progress ride in the header, opposite the back button (floated by
+   .header-action). The clock is a score, never a countdown (ADR-0004) — so it
+   is styled plain, not alarming. The help button sits outside them, hard against
+   the edge, so the two right-hand controls don't stack on top of each other. */
+.sprint-meters {
+  display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;
+}
+/* Two controls share the right edge, so the meters are pushed inboard of the
+   help button. Specificity must match `.quiz-header.titled > .header-action`,
+   which pins every action to the edge — a plain `.sprint-meters` rule loses to
+   it and the two stack on top of each other. */
+.quiz-header.titled > .sprint-meters {
+  right: calc(max(24px, env(safe-area-inset-right)) + 46px);
+}
+.sprint-clock { font-family: var(--font-brand); font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.sprint-progress { font-size: 0.72rem; opacity: 0.7; white-space: nowrap; }
+/* Reserve a whole line INCLUDING .status's padding — box-sizing is border-box,
+   so a 1.5em min-height left only ~12px for the text and the slot grew by 9px
+   the moment narration appeared, shoving the grid down. */
+#sprint-status { min-height: calc(1.5em + 0.75rem); margin: 0; }
+#sprint-status[hidden] { display: block !important; visibility: hidden; }
+
+/* The live grid — one lane per Tier, four cells each. Reuses the Melody board's
+   cells so green/grey mean the same thing here, on the result, and in the
+   pasted share grid. */
+/* Sprint's column is top-anchored, not centred like Melody's. Its content
+   shrinks a lot when the run ends (the keyboard goes away), and a centred column
+   would slide everything upward at exactly the moment the player is reading their
+   result. Top-anchored, the grid stays put and the panels swap beneath it. */
+.sprint-main { justify-content: flex-start; padding-top: clamp(6px, 2.5vh, 22px); }
+/* Reserve the play row even when its buttons are gone. It sits between the grid
+   and the keyboard, so letting it collapse at the end of a run yanks the whole
+   keyboard up ~60px under the player's thumb. (Text scaling is disabled app-wide,
+   so a rem here is stable — see the `html` rule.) */
+#sprint-play { min-height: 2.5rem; }
+.sprint-board { margin: 0.35rem 0 0.6rem; }
+/* The CELLS are the grid — they carry the weight, so they get the centre line.
+   The labels hang off the left edge (out of flow) rather than sitting in the
+   row: in flow, "label + cells" centres as one block and the grid itself reads
+   pushed to the right of everything above and below it. */
+.sprint-lane { position: relative; align-items: center; gap: 6px; }
+.sprint-lane-label {
+  position: absolute;
+  right: 100%;
+  margin-right: 10px;
+  white-space: nowrap;
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; opacity: 0.4;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+/* The Tier you're on says so — the climb is the ramp, so arriving at Medium
+   should be visible, not just audible. */
+.sprint-lane.current .sprint-lane-label { opacity: 1; color: var(--berry); }
+/* The Reveal walks the misses home before the result card appears; reserve its
+   slot so the keyboard below doesn't jump as each line lands. */
+#sprint-reveal { min-height: 1.5em; text-align: center; }
 
 /* The status line narrates playback (home → tune). Keep its slot reserved even
-   when hidden so appearing/disappearing text never shifts the grid below. */
-#daily-status { min-height: 1.5em; margin: 0; }
+   when hidden so appearing/disappearing text never shifts the grid below — and
+   reserve the padding too (border-box), or the slot grows when text lands. */
+#daily-status { min-height: calc(1.5em + 0.75rem); margin: 0; }
 /* !important to out-rank the global `[hidden] { display: none !important }`. */
 #daily-status[hidden] { display: block !important; visibility: hidden; }
 
@@ -1028,6 +1127,18 @@ body.scrolled #home-screen::before { opacity: 1; }
 .daily-cell.yellow::after { box-shadow: inset 0 0 0 2px #7a5b00; }
 .daily-board.recap .daily-cell.green::after,
 .daily-board.recap .daily-cell.yellow::after { top: 3px; right: 3px; width: 7px; height: 7px; }
+
+/* Sprint's Reveal cue: which cell is being walked home. It MUST come after the
+   colour rules above — they set `box-shadow: none`, and a miss is a grey cell,
+   so an earlier cue would lose its ring on exactly the cells it marks. */
+.daily-cell.cue {
+  box-shadow: inset 0 0 0 3px var(--berry);
+  transform: scale(1.12);
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-cell.cue { transform: none; }
+}
 
 /* On the result screen the board is a recap, not a play surface — text-less but
    sized to fill the available width so it doesn't read as cramped. Cells scale
