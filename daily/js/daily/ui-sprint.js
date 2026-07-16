@@ -21,7 +21,7 @@ import { sprintTourSteps } from './tour.js';
 import { DAILY_GAMES } from './registry.js';
 import { buildSprintShareText, formatElapsed } from './share.js';
 import { defaultDaily, recordResult, isPlayed, gameStats } from './stats.js';
-import { copyShare, createCountdown } from './ui-common.js';
+import { copyShare, createCountdown, renderNextGames } from './ui-common.js';
 
 const degName = (d, mode) => degreeInfo(d, mode).name;
 
@@ -31,7 +31,7 @@ const degName = (d, mode) => degreeInfo(d, mode).name;
 // Injectable so DOM tests don't sit through sixteen real seconds.
 const BEATS = { correct: 1000, wrong: 1000, tier: 1200 };
 
-export function createSprint({ piano, store, getState, showScreen, goBack, celebrate, onFinished, now = () => new Date(), beats = BEATS }) {
+export function createSprint({ piano, store, getState, showScreen, goBack, openGame, celebrate, onFinished, now = () => new Date(), beats = BEATS }) {
   const $ = (id) => document.getElementById(id);
   const el = {
     screen: $('sprint-screen'),
@@ -47,6 +47,9 @@ export function createSprint({ piano, store, getState, showScreen, goBack, celeb
     startBtn: $('sprint-start-btn'),
     replayBtn: $('sprint-replay-btn'),
     practiceBtn: $('sprint-practice-btn'),
+    next: $('sprint-next'),
+    nextLead: $('sprint-next-lead'),
+    nextCards: $('sprint-next-cards'),
     meters: document.querySelector('#sprint-screen .sprint-meters'),
     tour: $('sprint-tour'),
     tourText: $('sprint-tour-text'),
@@ -594,6 +597,9 @@ export function createSprint({ piano, store, getState, showScreen, goBack, celeb
     el.palette.hidden = true;
     el.mascotStage.hidden = true;
     el.reveal.hidden = true;
+    // Today's run is spent, so the sandbox pitch has nothing left to sell — and
+    // the result needs the room more than the row does.
+    el.practiceBtn.hidden = true;
     el.result.hidden = false;
     el.clock.textContent = formatElapsed(today.elapsedMs);
     el.progress.textContent = `${today.rounds} of ${today.rounds}`;
@@ -608,6 +614,16 @@ export function createSprint({ piano, store, getState, showScreen, goBack, celeb
     el.resultRevealBtn.hidden = !game || !game.misses().length;
 
     renderStats(stats);
+    // Practice is a sandbox with no day behind it — pitching today's other games
+    // off the back of it would be pitching them off nothing.
+    if (!practice && openGame) {
+      renderNextGames({
+        wrap: el.next, lead: el.nextLead, cards: el.nextCards,
+        daily: getState().daily, exclude: 'sprint', now, openGame,
+      });
+    } else if (el.next) {
+      el.next.hidden = true;
+    }
     countdown.start();
     if (all && live && celebrate) {
       celebrate({
@@ -688,10 +704,6 @@ export function createSprint({ piano, store, getState, showScreen, goBack, celeb
       renderBoard();
       setPlayRow({});
       el.mascotStage.hidden = true;
-      // Today's run is spent, but the sandbox never locks — there's still a way
-      // to keep playing.
-      el.practiceBtn.hidden = false;
-      el.practiceBtn.textContent = '🎓 Practice run';
       showScreen(el.screen);
       showResult(false);
       return;

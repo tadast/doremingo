@@ -37,6 +37,10 @@ const DAILY_HTML = `
       <div id="daily-stats"></div>
       <button id="daily-share-btn"></button>
       <p id="daily-share-status"></p>
+      <div id="daily-next" hidden>
+        <p id="daily-next-lead"></p>
+        <div id="daily-next-cards"></div>
+      </div>
       <p id="daily-countdown"></p>
     </div>
   </section>`;
@@ -81,15 +85,15 @@ after(() => {
   delete globalThis.window;
 });
 
-function freshDaily(piano = stubPiano()) {
+function freshDaily(piano = stubPiano(), { state = {}, openGame = () => {} } = {}) {
   document.body.innerHTML = DAILY_HTML;
-  let state = {};
   const daily = createDaily({
     piano,
     store: { save: (s) => { state = s; } },
     getState: () => state,
     showScreen: (s) => { s.hidden = false; },
     goHome: () => {},
+    openGame,
     celebrate: null,
     onFinished: null,
     now: () => new Date(FIXED_DATE),
@@ -346,4 +350,30 @@ test('leaving practice for the real Daily clears the tour', async (t) => {
   await daily.start();
   assert.equal($id('daily-tour').hidden, true);
   assert.equal($id('daily-play').hidden, false);
+});
+
+// A finished result is the moment a player is most willing to play again, and
+// the back arrow used to be the only way on from it.
+test("a finished result offers the day's other games, and hides the practice door", async (t) => {
+  const { dailyConfig } = await import('../js/daily/schedule.js');
+  const { defaultDaily } = await import('../js/daily/stats.js');
+  const day = dailyConfig(FIXED_DATE, 'melody').day;
+  const state = { daily: defaultDaily() };
+  state.daily.games.melody.today = { day, solved: true, guesses: 2, maxGuesses: 3, rows: [] };
+
+  const opened = [];
+  const daily = freshDaily(stubPiano(), { state, openGame: (id) => opened.push(id) });
+  t.after(() => daily.stop());
+
+  await daily.start(); // locked result view
+  assert.equal($id('daily-next').hidden, false, 'Sprint is still on the table');
+
+  const cards = [...document.querySelectorAll('#daily-next-cards .picker-card')];
+  assert.deepEqual(cards.map((c) => c.dataset.game), ['sprint'], 'the OTHER game, never itself');
+  cards[0].click();
+  assert.deepEqual(opened, ['sprint'], 'and the tile actually opens it');
+
+  // The pitch text is chosen on entry, so a first-timer who played was still
+  // being asked "New? Try a practice tune" on their own result.
+  assert.equal($id('daily-practice-btn').hidden, true, 'no practice pitch on a spent day');
 });

@@ -168,6 +168,7 @@ const daily = createDaily({
   getState: () => state,
   showScreen,
   goHome: () => openPicker(),
+  openGame: (gameId) => openDailyGame(gameId),
   celebrate,
   onFinished: onDailyFinished,
   ...dailyDevOpts,
@@ -179,6 +180,7 @@ const sprint = createSprint({
   getState: () => state,
   showScreen,
   goBack: () => openPicker(),
+  openGame: (gameId) => openDailyGame(gameId),
   celebrate,
   onFinished: onDailyFinished,
   ...dailyDevOpts,
@@ -916,10 +918,17 @@ el.tabWarmup.addEventListener('click', () => switchMode('warmup'));
 // down and the day's guesses survive. A plain overlay rather than <dialog>,
 // which needs WKWebView 15.4 (the app targets iOS 15.0).
 function makeHelpModal({ btn, dialog, closeBtn }) {
-  const open = () => { dialog.hidden = false; closeBtn.focus(); };
+  // The lock stops the screen behind scrolling under a drag that misses the card
+  // (Sprint's rules are long enough to want scrolling of their own).
+  const open = () => {
+    dialog.hidden = false;
+    document.body.classList.add('modal-open');
+    closeBtn.focus();
+  };
   const close = () => {
     if (dialog.hidden) return;
     dialog.hidden = true;
+    document.body.classList.remove('modal-open');
     btn.focus(); // return focus to the trigger
   };
   btn.addEventListener('click', open);

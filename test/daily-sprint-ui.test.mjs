@@ -47,6 +47,10 @@ const SPRINT_HTML = `
       <button id="sprint-share-btn"></button>
       <button id="sprint-result-reveal-btn" hidden></button>
       <p id="sprint-share-status"></p>
+      <div id="sprint-next" hidden>
+        <p id="sprint-next-lead"></p>
+        <div id="sprint-next-cards"></div>
+      </div>
       <p id="sprint-countdown"></p>
     </div>
   </section>`;
@@ -87,7 +91,7 @@ after(() => {
   delete globalThis.window;
 });
 
-function freshSprint({ piano = stubPiano(), state = { daily: defaultDaily() }, celebrate = null } = {}) {
+function freshSprint({ piano = stubPiano(), state = { daily: defaultDaily() }, celebrate = null, openGame = () => {} } = {}) {
   document.body.innerHTML = SPRINT_HTML;
   const sprint = createSprint({
     piano,
@@ -95,6 +99,7 @@ function freshSprint({ piano = stubPiano(), state = { daily: defaultDaily() }, c
     getState: () => state,
     showScreen: (s) => { s.hidden = false; },
     goBack: () => {},
+    openGame,
     celebrate,
     onFinished: null,
     now: () => new Date(FIXED_DATE),
@@ -640,7 +645,10 @@ test('entering a run wipes the last run\'s narration', async (t) => {
   assert.equal(document.getElementById('sprint-status').textContent, '', 'no stale narration');
 });
 
-test('the practice door is hidden while practising, and open on a locked day', async (t) => {
+// The door is a pitch, and the result view is the wrong place to pitch: today's
+// run is already spent, and Sprint's result (four Tier rows, clock, share) needs
+// the vertical room more than the row does.
+test('the practice door is hidden while practising, and on the result view', async (t) => {
   const state = { daily: defaultDaily() };
   state.daily.games.sprint.today = {
     day: CONFIG.day, correct: 12, rounds: 16, elapsedMs: 1000,
@@ -650,11 +658,59 @@ test('the practice door is hidden while practising, and open on a locked day', a
   t.after(() => sprint.stop());
 
   sprint.start(); // locked result view
-  assert.equal(document.getElementById('sprint-practice-btn').hidden, false, 'still a way to play');
+  const btn = document.getElementById('sprint-practice-btn');
+  assert.equal(btn.hidden, true, 'no pitch on a spent day');
+});
 
-  document.getElementById('sprint-practice-btn').click();
-  assert.equal(document.getElementById('sprint-practice-btn').hidden, true, 'hidden inside the sandbox');
-  assert.equal(cells().length, 4, 'and the lock did not block practice');
+// A finished result is the moment a player is most willing to play again, and
+// the back arrow used to be the only way on from it.
+test('a finished result offers the games still unplayed today', async (t) => {
+  const state = { daily: defaultDaily() };
+  state.daily.games.sprint.today = {
+    day: CONFIG.day, correct: 12, rounds: 16, elapsedMs: 1000,
+    marks: new Array(16).fill('green'), answers: RUN.questions.map((q) => q.degree),
+  };
+  const opened = [];
+  const { sprint } = freshSprint({ state, openGame: (id) => opened.push(id) });
+  t.after(() => sprint.stop());
+
+  sprint.start(); // locked result view
+  assert.equal(document.getElementById('sprint-next').hidden, false, 'Melody is still on the table');
+
+  const cards = [...document.querySelectorAll('#sprint-next-cards .picker-card')];
+  assert.deepEqual(cards.map((c) => c.dataset.game), ['melody'], 'the OTHER game, never itself');
+
+  cards[0].click();
+  assert.deepEqual(opened, ['melody'], 'and the tile actually opens it');
+});
+
+test('a spent day offers nothing — the countdown says the rest', async (t) => {
+  const state = { daily: defaultDaily() };
+  const day = CONFIG.day;
+  state.daily.games.sprint.today = {
+    day, correct: 12, rounds: 16, elapsedMs: 1000,
+    marks: new Array(16).fill('green'), answers: RUN.questions.map((q) => q.degree),
+  };
+  state.daily.games.melody.today = { day, solved: true, guesses: 2, maxGuesses: 3, rows: [] };
+  const { sprint } = freshSprint({ state });
+  t.after(() => sprint.stop());
+
+  sprint.start();
+  assert.equal(document.getElementById('sprint-next').hidden, true, 'both played — no dead tile');
+});
+
+test('the practice door is open before a run, and hidden inside the sandbox', async (t) => {
+  const { sprint } = freshSprint({ state: { daily: defaultDaily() } });
+  t.after(() => sprint.stop());
+
+  sprint.start(); // unplayed day: the door is the whole point
+  const btn = document.getElementById('sprint-practice-btn');
+  assert.equal(btn.hidden, false, 'a first-timer is offered the sandbox');
+  assert.match(btn.textContent, /New\?/, 'and told it is for them');
+
+  btn.click();
+  assert.equal(btn.hidden, true, 'hidden inside the sandbox');
+  assert.equal(cells().length, 4, 'practice deals its own shorter run');
 });
 
 test('a finished run locks the day to a result view', async (t) => {

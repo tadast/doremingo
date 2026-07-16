@@ -22,11 +22,11 @@ import { tourSteps } from './tour.js';
 import { DAILY_GAMES } from './registry.js';
 import { buildShareText } from './share.js';
 import { defaultDaily, recordResult, isPlayed, winPercent, gameStats } from './stats.js';
-import { copyShare, createCountdown } from './ui-common.js';
+import { copyShare, createCountdown, renderNextGames } from './ui-common.js';
 
 const degName = (d, mode) => degreeInfo(d, mode).name;
 
-export function createDaily({ piano, store, getState, showScreen, goHome, celebrate, onFinished, now = () => new Date() }) {
+export function createDaily({ piano, store, getState, showScreen, goHome, openGame, celebrate, onFinished, now = () => new Date() }) {
   const $ = (id) => document.getElementById(id);
   const el = {
     screen: $('daily-screen'),
@@ -43,6 +43,9 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     playBtn: $('daily-play-btn'),
     homeBtn: $('daily-home-btn'),
     practiceBtn: $('daily-practice-btn'),
+    next: $('daily-next'),
+    nextLead: $('daily-next-lead'),
+    nextCards: $('daily-next-cards'),
     board: $('daily-board'),
     palette: $('daily-degree-buttons'),
     mascotStage: $('daily-mascot-stage'),
@@ -455,6 +458,10 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     el.play.hidden = true;
     el.palette.hidden = true;
     el.mascotStage.hidden = true;
+    // Today's tune is spent, so the sandbox pitch has nothing left to sell. It
+    // also went stale here: the text is chosen on entry, so a first-timer who
+    // played was still being asked "New? Try a practice tune" on their result.
+    el.practiceBtn.hidden = true;
     el.result.hidden = false;
     el.board.classList.add('recap'); // shrink the grid to a compact recap
 
@@ -475,6 +482,16 @@ export function createDaily({ piano, store, getState, showScreen, goHome, celebr
     }
 
     renderStats(getState().daily, today.solved ? today.guesses : null, max);
+    // Practice is a sandbox with no day behind it — pitching today's other games
+    // off the back of it would be pitching them off nothing.
+    if (!practice && openGame) {
+      renderNextGames({
+        wrap: el.next, lead: el.nextLead, cards: el.nextCards,
+        daily: getState().daily, exclude: 'melody', now, openGame,
+      });
+    } else if (el.next) {
+      el.next.hidden = true;
+    }
     countdown.start();
   }
 

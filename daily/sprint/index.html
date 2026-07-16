@@ -336,6 +336,14 @@
                coming back tomorrow-morning-brain) shouldn't lose the teaching. -->
           <button id="sprint-result-reveal-btn" class="big-btn secondary" hidden>🔁 Hear what you missed</button>
           <p id="sprint-share-status" class="status" aria-live="polite"></p>
+
+          <!-- The shelf's other games, if any are still unplayed today. Sits
+               above the countdown: "play this now" beats "come back tomorrow". -->
+          <div id="sprint-next" class="daily-next" hidden>
+            <p id="sprint-next-lead" class="daily-next-lead"></p>
+            <div id="sprint-next-cards" class="picker-cards"></div>
+          </div>
+
           <p id="sprint-countdown" class="status"></p>
         </div>
       </div>
@@ -403,6 +411,14 @@
           <div id="daily-stats" class="daily-stats"></div>
           <button id="daily-share-btn" class="big-btn">Share result</button>
           <p id="daily-share-status" class="status" aria-live="polite"></p>
+
+          <!-- The shelf's other games, if any are still unplayed today. Sits
+               above the countdown: "play this now" beats "come back tomorrow". -->
+          <div id="daily-next" class="daily-next" hidden>
+            <p id="daily-next-lead" class="daily-next-lead"></p>
+            <div id="daily-next-cards" class="picker-cards"></div>
+          </div>
+
           <p id="daily-countdown" class="status"></p>
         </div>
       </div>

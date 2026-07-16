@@ -35,6 +35,13 @@
   --blue: #4cc9f0;
   --red: #ef476f;
   --berry: #c42e62; /* AA-safe pink for small text — white-on-pink fails contrast */
+  /* Answer marks. Deliberately NOT --green/--red: those ARE palette colours
+     (Fa is --green, Do is a shade off --red), so a mark wearing one of them
+     disappeared on exactly the button it was marking. These sit clear of every
+     Degree hue. See .degree-btn.correct for the white separator that does the
+     rest of the work. */
+  --mark-right: #00a06b;
+  --mark-wrong: #d81038;
   --font-brand: 'Quicksand', ui-rounded, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, "SF Mono", Menlo, monospace;
 }
@@ -707,19 +714,36 @@ body.scrolled #home-screen::before { opacity: 1; }
 .degree-btn[data-degree="me"] { background: #d6a14a; }
 .degree-btn[data-degree="le"] { background: #6a76c4; }
 
-.degree-btn.correct { outline: 4px solid var(--green); }
-.degree-btn.wrong { outline: 4px solid var(--red); }
-/* On the piano keyboard, a thin inner border on the sides + bottom only — no
-   top edge (so it can't protrude above the keyboard) and inset (so the next
-   key can't clip its right edge). Higher specificity than the .playing walk
-   glow so it stays visible when a key is both answered and being walked. */
-.degrees.piano .degree-btn.correct {
-  outline: none;
-  box-shadow: inset 3px 0 0 var(--green), inset -3px 0 0 var(--green), inset 0 -3px 0 var(--green);
+/* ---- answer marks ----
+   A mark is a ring, and a ring is only as visible as the button beneath it: a
+   green one on green Fa vanished outright, and green-on-blue Sol / red-on-pink
+   Do were near-misses. Hue alone can't win — twelve Degrees own twelve colours
+   and a mark has to read on all of them.
+   So every ring carries a WHITE band between the button and the mark colour.
+   The white is what guarantees the edge; the colour only has to say which mark
+   it is. Border (not a second outline) because outline can't be two-toned, and
+   box-sizing is border-box, so it costs no size.
+   Box-shadow stays free for .playing — that's why this is outline, not shadow. */
+.degree-btn.correct { --mark: var(--mark-right); }
+.degree-btn.wrong { --mark: var(--mark-wrong); }
+.degree-btn.correct,
+.degree-btn.wrong {
+  border: 3px solid #fff;
+  outline: 4px solid var(--mark);
 }
+/* On the piano keyboard, an inner band on the sides + bottom only — no top edge
+   (so it can't protrude above the keyboard) and inset (so the next key can't
+   clip its right edge). Same two-tone trick, stacked: the mark paints over the
+   white, leaving mark at the key edge and white just inside it — earlier
+   shadows sit on top. Higher specificity than the .playing walk glow so it
+   stays visible when a key is both answered and being walked. */
+.degrees.piano .degree-btn.correct,
 .degrees.piano .degree-btn.wrong {
   outline: none;
-  box-shadow: inset 3px 0 0 var(--red), inset -3px 0 0 var(--red), inset 0 -3px 0 var(--red);
+  border: none;
+  box-shadow:
+    inset 4px 0 0 var(--mark), inset -4px 0 0 var(--mark), inset 0 -4px 0 var(--mark),
+    inset 7px 0 0 #fff, inset -7px 0 0 #fff, inset 0 -7px 0 #fff;
 }
 .degree-btn.playing {
   transform: scale(1.1);
@@ -1004,6 +1028,24 @@ body.scrolled #home-screen::before { opacity: 1; }
 .picker-done { font-size: 0.78rem; font-weight: 600; opacity: 0.8; white-space: nowrap; }
 .picker-streak { text-align: center; font-size: 0.85rem; font-weight: 600; margin: 1rem 0 0; }
 
+/* ---- the result view's tail: the shelf's other games ----
+   Same card as the picker, so a game looks the same wherever it's offered. The
+   rule above it makes it read as a footer to the result rather than another of
+   the result's own buttons. */
+.daily-next {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(59, 45, 63, 0.12);
+}
+.daily-next[hidden] { display: none; }
+.daily-next-lead {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.65;
+  text-align: center;
+}
+
 /* ---- Daily Sprint ---- */
 /* Clock + progress ride in the header, opposite the back button (floated by
    .header-action). The clock is a score, never a countdown (ADR-0004) — so it
@@ -1015,9 +1057,11 @@ body.scrolled #home-screen::before { opacity: 1; }
 /* Two controls share the right edge, so the meters are pushed inboard of the
    help button. Specificity must match `.quiz-header.titled > .header-action`,
    which pins every action to the edge — a plain `.sprint-meters` rule loses to
-   it and the two stack on top of each other. */
+   it and the two stack on top of each other.
+   The offset clears the button's full 44px width PLUS breathing room — at 46px
+   the meters sat 2px off the icon and the two read as one crowded lump. */
 .quiz-header.titled > .sprint-meters {
-  right: calc(max(24px, env(safe-area-inset-right)) + 46px);
+  right: calc(max(24px, env(safe-area-inset-right)) + 60px);
 }
 .sprint-clock { font-family: var(--font-brand); font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 .sprint-progress { font-size: 0.72rem; opacity: 0.7; white-space: nowrap; }
@@ -1095,7 +1139,14 @@ body.scrolled #home-screen::before { opacity: 1; }
   opacity: 0.4; cursor: default; transform: none; box-shadow: 0 2px 0 #d23369;
 }
 /* Practice escape-hatch — lives under the palette, out of the play cluster. */
-.daily-practice-row { display: flex; justify-content: center; margin: 0.75rem 0 0; }
+/* The gap belongs to the BUTTON, not the row: the sandbox door hides on the
+   result view and inside the sandbox itself, and a margin on the row would hold
+   12px of dead space open above the result with nothing in it. An empty flex row
+   is 0px tall; an empty flex row with a margin is not.
+   (`:not(:has(…))` would say this more directly, but :has needs WKWebView 15.4
+   and the app targets iOS 15.0 — see makeHelpModal in js/main.js.) */
+.daily-practice-row { display: flex; justify-content: center; }
+.daily-practice-row > .chip-btn { margin-top: 0.75rem; }
 
 .daily-board {
   display: flex; flex-direction: column; gap: 6px;
@@ -1251,7 +1302,11 @@ body.scrolled #home-screen::before { opacity: 1; }
   align-items: center;
   justify-content: center;
   padding: 20px;
+  /* Sprint's rules are long enough to reach both ends of an iPhone screen. */
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
   background: rgba(59, 45, 63, 0.45);
+  overscroll-behavior: contain; /* dragging the backdrop must not scroll the game */
 }
 .help-overlay[hidden] { display: none; }
 .help-dialog {
@@ -1259,11 +1314,21 @@ body.scrolled #home-screen::before { opacity: 1; }
   padding: 24px;
   max-width: 360px;
   width: 100%;
+  /* Taller than the phone → the card scrolls, not the page behind it. 100% of
+     the overlay's content box, i.e. the viewport less its padding + insets. */
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   color: var(--ink);
   background: #fff;
   box-shadow: 0 12px 40px rgba(59, 45, 63, 0.28);
   text-align: left;
 }
+/* While the rules are up, the game behind them is frozen — otherwise a drag that
+   misses the card scrolls the screen underneath and you close the modal onto a
+   view that moved. Set by makeHelpModal (js/main.js). */
+body.modal-open { overflow: hidden; }
 .help-dialog h2 { margin: 0 0 12px; color: var(--pink); font-size: 1.3rem; }
 .help-dialog p { margin: 0 0 12px; line-height: 1.45; font-size: 0.95rem; }
 .help-dialog .big-btn { margin-top: 4px; width: 100%; }
