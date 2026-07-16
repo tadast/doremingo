@@ -109,6 +109,15 @@ const el = {
 const dailyMascots = ['daily-mascot', 'sprint-mascot', 'picker-mascot'].map((id) => document.getElementById(id));
 for (const m of [el.homeMascot, el.quizMascot, el.clearMascot, ...dailyMascots]) m.innerHTML = FLAMINGO;
 
+// Daily-only flavor — www.doremingo.com serves just the Daily under /daily/;
+// Learn and Warmup are the app's side of the deal (see site/index.html).
+// Path-based so the same source runs the full app at the repo root in dev,
+// on codeme.lt, and in the iOS build (capacitor:// serves from "/").
+// Declared up here because the Daily controllers below read it at construction,
+// not just inside callbacks — a `const` used before its line throws.
+const DAILY_ONLY =
+  location.protocol.startsWith('http') && /^\/daily(\/|$)/.test(location.pathname);
+
 // The DOM adapter the Round drives, and the meet/notes screens reuse.
 const view = createGameView(el);
 
@@ -176,6 +185,7 @@ const picker = createPicker({
   showScreen,
   goBack: () => goLearn(),
   openGame: (gameId) => openDailyGame(gameId),
+  canGoBack: !DAILY_ONLY, // the /daily/ deploy has no Learn behind it
   ...dailyDevOpts,
 });
 
@@ -252,13 +262,6 @@ function hideLoadError() {
 // ---------- routing ----------
 // Hash routes so levels, the tutorial and the menu pages are shareable links:
 // #/  ·  #/tutorial  ·  #/level/3  ·  #/about  ·  #/notes
-
-// Daily-only flavor — www.doremingo.com serves just the Daily under /daily/;
-// Learn and Warmup are the app's side of the deal (see site/index.html).
-// Path-based so the same source runs the full app at the repo root in dev,
-// on codeme.lt, and in the iOS build (capacitor:// serves from "/").
-const DAILY_ONLY =
-  location.protocol.startsWith('http') && /^\/daily(\/|$)/.test(location.pathname);
 
 let currentRoute = null;
 

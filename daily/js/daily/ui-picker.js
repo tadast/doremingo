@@ -28,7 +28,7 @@ const CARDS = {
   },
 };
 
-export function createPicker({ getState, showScreen, goBack, openGame, now = () => new Date() }) {
+export function createPicker({ getState, showScreen, goBack, openGame, canGoBack = true, now = () => new Date() }) {
   const $ = (id) => document.getElementById(id);
   const el = {
     screen: $('picker-screen'),
@@ -103,6 +103,11 @@ export function createPicker({ getState, showScreen, goBack, openGame, now = () 
     showScreen(el.screen);
   }
 
+  // The picker is the shelf's front door. On the /daily/ web deploy it is also
+  // the app's front door — there is no Learn to go back to (main.js: DAILY_ONLY)
+  // — so the back arrow goes away rather than tipping visitors into a Learn map
+  // that deploy deliberately withholds.
+  if (el.back) el.back.hidden = !canGoBack;
   el.back?.addEventListener('click', () => goBack());
 
   return { start, render, screen: el.screen };
