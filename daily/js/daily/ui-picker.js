@@ -3,7 +3,7 @@
 //
 // Why a picker and not two tabs: the tab bar is the Mode seam (Learn / Daily /
 // Warmup — see CONTEXT.md: Mode), and the games are not Modes. Keeping them
-// behind #/daily also means the /daily/ web deploy still has one front door,
+// under /daily/ also means the /daily/ web deploy still has one front door,
 // and a third game costs a card rather than a rethink.
 
 import { dailyConfig } from './schedule.js';

@@ -111,12 +111,18 @@ for (const m of [el.homeMascot, el.quizMascot, el.clearMascot, ...dailyMascots])
 
 // Daily-only flavor — www.doremingo.com serves just the Daily under /daily/;
 // Learn and Warmup are the app's side of the deal (see site/index.html).
-// Path-based so the same source runs the full app at the repo root in dev,
-// on codeme.lt, and in the iOS build (capacitor:// serves from "/").
+//
+// Read from a stamped tag (index.html), not guessed from the URL. The old
+// guess — an http protocol plus a /daily prefix on the pathname — only worked
+// while routes lived in the hash, so the pathname never moved. Now that
+// /daily/sprint/ is a real route, the deploy and the route are indistinguishable
+// by URL, and the full app would strip its own Learn on a refresh under /daily/.
+// The deploy knows what it is; it should say so rather than be deduced.
+//
 // Declared up here because the Daily controllers below read it at construction,
 // not just inside callbacks — a `const` used before its line throws.
 const DAILY_ONLY =
-  location.protocol.startsWith('http') && /^\/daily(\/|$)/.test(location.pathname);
+  document.querySelector('meta[name="deploy"]')?.content === 'daily-only';
 
 // The DOM adapter the Round drives, and the meet/notes screens reuse.
 const view = createGameView(el);
@@ -260,14 +266,42 @@ function hideLoadError() {
 }
 
 // ---------- routing ----------
-// Hash routes so levels, the tutorial and the menu pages are shareable links:
-// #/  ·  #/tutorial  ·  #/level/3  ·  #/about  ·  #/notes
+// Real paths, never hashes:
+//   /  ·  /tutorial  ·  /level/3  ·  /about  ·  /notes  ·  /warmup
+//   /daily/  ·  /daily/melody/  ·  /daily/sprint/
+//
+// Why paths cost nothing here and buy a lot: a URL fragment is never sent to a
+// server, so #/sprint made every shared game unfurl the same link preview
+// (js/daily/share.js). A path is a real address a crawler can fetch.
+//
+// Both hosts serve these without a client-side redirect, by different means:
+//   · GitHub Pages — bin/publish-web.sh stamps a real index.html per Daily
+//     route. (Pages has no rewrite rules, and its 404.html fallback answers
+//     with an HTTP 404, which link unfurlers refuse — hence real files.)
+//   · Capacitor iOS — its Router serves the app shell for ANY extensionless
+//     path, i.e. the rewrite rule Pages won't give us. No per-route files.
+//
+// The pathnames are identical on both, so this is one router, not two. Assets
+// stay relative to a per-deploy <base> (index.html), which is what differs:
+// '/daily/' on Pages, '/' in the app.
 
 let currentRoute = null;
 
+/** Route key for a path: trailing slash trimmed, so '/daily/' === '/daily'. */
+function routeOf(pathname = location.pathname) {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+}
+
 function setRoute(route) {
-  currentRoute = route;
-  if (location.hash !== route) location.hash = route;
+  currentRoute = routeOf(route);
+  // Compare canonically: pushing '/daily/' while already on '/daily' is not a
+  // navigation, and stacking it would make Back a no-op the user has to press twice.
+  if (routeOf() === currentRoute) return;
+  // Carry the query string across. Unlike a hash write, pushState replaces the
+  // whole URL — so dropping it here would quietly strip ?currentDate= the
+  // moment the player navigated, and the dev flags would only work until the
+  // first tap. They are read once at boot, so they must survive every route.
+  history.pushState(null, '', route + location.search);
 }
 
 // Tear down an active round when leaving the quiz screen.
@@ -293,17 +327,20 @@ function startDaily() {
   openPicker();
 }
 
+// One spelling per route now, on both deploys. The /daily/ web build used to
+// need a short '#/sprint' alias because its whole site was Daily; under paths
+// its site root IS /daily/, so the app's own route is already the right URL.
 function openPicker() {
   leaveQuiz();
   activeMode = 'daily';
-  setRoute(DAILY_ONLY ? '#/' : '#/daily');
+  setRoute('/daily/');
   picker.start();
 }
 
 function openDailyGame(gameId) {
   leaveQuiz();
   activeMode = 'daily';
-  setRoute(DAILY_ONLY ? `#/${gameId}` : `#/daily/${gameId}`);
+  setRoute(`/daily/${gameId}/`);
   dailyGames[gameId].start();
 }
 
@@ -311,7 +348,7 @@ function openDailyGame(gameId) {
 function goLearn() {
   activeMode = 'learn';
   leaveQuiz();
-  setRoute('#/learn');
+  setRoute('/learn');
   renderHome();
   showScreen(el.homeScreen);
 }
@@ -334,14 +371,14 @@ function openLevelFromLink(id) {
 }
 
 function openAbout() {
-  setRoute('#/about');
+  setRoute('/about');
   showScreen(el.aboutScreen);
 }
 
 // Notes reference needs live audio, but is reachable without a level/tutorial —
 // so unlock the piano here (the menu tap / route entry is the user gesture).
 async function openNotes() {
-  setRoute('#/notes');
+  setRoute('/notes');
   renderNotesReference();
   showScreen(el.notesScreen);
   try {
@@ -353,49 +390,48 @@ async function openNotes() {
   }
 }
 
-// Which Daily game a hash names, if any. Both spellings are honoured: the app
-// routes #/daily/sprint, while the /daily/ web deploy — where the whole site IS
-// Daily — gets the shorter #/sprint that share links use.
-function dailyGameFromHash(hash) {
-  const m = hash.match(/^#\/(?:daily\/)?(melody|sprint)$/);
+/** Which Daily game a path names, if any. */
+function dailyGameFromPath(route) {
+  const m = route.match(/^\/daily\/(melody|sprint)$/);
   return m ? m[1] : null;
 }
 
 function applyRoute() {
+  const route = routeOf();
   // The /daily/ deploy is Daily-only: no Learn, no Warmup, so every route here
-  // is either a game or the picker.
+  // is either a game or the picker. Anything else lands on the shelf rather
+  // than 404ing — a stale or mistyped link should still give you something.
   if (DAILY_ONLY) {
-    const game = dailyGameFromHash(location.hash);
+    const game = dailyGameFromPath(route);
     if (game) openDailyGame(game);
     else openPicker();
     return;
   }
-  const levelMatch = location.hash.match(/^#\/level\/(\d+)$/);
+  const levelMatch = route.match(/^\/level\/(\d+)$/);
   if (levelMatch && getLevel(Number(levelMatch[1]))) {
-    setRoute(location.hash);
+    setRoute(route);
     openLevelFromLink(Number(levelMatch[1]));
     return;
   }
-  if (location.hash === '#/tutorial') {
-    setRoute('#/tutorial');
+  if (route === '/tutorial') {
+    setRoute('/tutorial');
     startTutorial();
     return;
   }
-  if (location.hash === '#/about') { openAbout(); return; }
-  if (location.hash === '#/notes') { openNotes(); return; }
-  if (location.hash === '#/warmup') { switchMode('warmup'); return; }
-  const dailyGame = dailyGameFromHash(location.hash);
+  if (route === '/about') { openAbout(); return; }
+  if (route === '/notes') { openNotes(); return; }
+  if (route === '/warmup') { switchMode('warmup'); return; }
+  const dailyGame = dailyGameFromPath(route);
   if (dailyGame) { openDailyGame(dailyGame); return; }
-  if (location.hash === '#/daily') { switchMode('daily'); return; }
-  if (location.hash === '#/learn') { switchMode('learn'); return; }
+  if (route === '/daily') { switchMode('daily'); return; }
+  if (route === '/learn') { switchMode('learn'); return; }
   if (state.tutorialDone) goLearn();
   else startTutorial();
 }
 
-window.addEventListener('hashchange', () => {
-  if (location.hash === currentRoute) return; // our own navigation
-  applyRoute();
-});
+// Back/forward. pushState does not fire this — only real history moves do — so
+// unlike the old hashchange listener there is no self-navigation to filter out.
+window.addEventListener('popstate', () => applyRoute());
 
 // ---------- home / level map ----------
 
@@ -597,7 +633,7 @@ async function meetNext(skipped = false) {
 }
 
 function startTutorial() {
-  setRoute('#/tutorial');
+  setRoute('/tutorial');
   runMeet(tutorialSteps(), (skipped) => {
     state.tutorialDone = true;
     state.metNotes = [...new Set([...state.metNotes, 1, 3, 5])];
@@ -645,7 +681,7 @@ function enterQuiz() {
 }
 
 async function startLevel(id) {
-  setRoute(`#/level/${id}`);
+  setRoute(`/level/${id}`);
   el.loadStatus.hidden = false;
   el.loadStatus.textContent = 'Warming up the piano…';
   try {
@@ -704,7 +740,7 @@ let warmup = null; // the Warmup playlist brain while a warmup runs, else null
 let warmupCapped = false; // the question cap was hit — finish after this resolution
 
 async function startWarmup() {
-  setRoute('#/warmup');
+  setRoute('/warmup');
   el.warmupStatus.hidden = false;
   el.warmupStatus.textContent = 'Warming up the piano…';
   try {
@@ -1003,7 +1039,9 @@ window.__doremingo = {
 // Daily-only page chrome: no way "back" into Learn (it isn't there), and the
 // result view carries the one nudge toward the full game on the landing page.
 if (DAILY_ONLY) {
-  document.title = 'DoReMingo Daily — free daily melody puzzle';
+  // No document.title here: each route ships its own, stamped at publish time
+  // (bin/publish-web.sh), so overwriting it would undo the per-game titles and
+  // put Melody's name on Sprint's tab.
   document.body.classList.add('daily-only');
   document.getElementById('daily-back-btn').hidden = true;
   const upsell = document.createElement('a');

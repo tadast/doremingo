@@ -131,27 +131,26 @@ main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: 0 1.5rem
   height: 34px;
   border-radius: 9px;
   animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--row-delay, 0s) + var(--col-delay, 0s));
 }
 .tile.green { background: var(--green); }
 .tile.yellow { background: var(--yellow); }
 .tile.grey { background: var(--grey-tile); }
 
-/* stagger: tiles pop in reading order */
-.row:nth-child(1) .tile:nth-child(1) { animation-delay: 0.10s; }
-.row:nth-child(1) .tile:nth-child(2) { animation-delay: 0.16s; }
-.row:nth-child(1) .tile:nth-child(3) { animation-delay: 0.22s; }
-.row:nth-child(1) .tile:nth-child(4) { animation-delay: 0.28s; }
-.row:nth-child(1) .tile:nth-child(5) { animation-delay: 0.34s; }
-.row:nth-child(2) .tile:nth-child(1) { animation-delay: 0.46s; }
-.row:nth-child(2) .tile:nth-child(2) { animation-delay: 0.52s; }
-.row:nth-child(2) .tile:nth-child(3) { animation-delay: 0.58s; }
-.row:nth-child(2) .tile:nth-child(4) { animation-delay: 0.64s; }
-.row:nth-child(2) .tile:nth-child(5) { animation-delay: 0.70s; }
-.row:nth-child(3) .tile:nth-child(1) { animation-delay: 0.82s; }
-.row:nth-child(3) .tile:nth-child(2) { animation-delay: 0.88s; }
-.row:nth-child(3) .tile:nth-child(3) { animation-delay: 0.94s; }
-.row:nth-child(3) .tile:nth-child(4) { animation-delay: 1.00s; }
-.row:nth-child(3) .tile:nth-child(5) { animation-delay: 1.06s; }
+/* Stagger: tiles pop in reading order. Row and column delays are separate
+   inherited custom properties so a grid of any shape stays covered — Melody
+   posts 3x5, Sprint posts 4x4, and neither needs its own rule. */
+.row { --row-delay: 0s; }
+.row:nth-child(1) { --row-delay: 0.10s; }
+.row:nth-child(2) { --row-delay: 0.46s; }
+.row:nth-child(3) { --row-delay: 0.82s; }
+.row:nth-child(4) { --row-delay: 1.18s; }
+
+.tile:nth-child(1) { --col-delay: 0s; }
+.tile:nth-child(2) { --col-delay: 0.06s; }
+.tile:nth-child(3) { --col-delay: 0.12s; }
+.tile:nth-child(4) { --col-delay: 0.18s; }
+.tile:nth-child(5) { --col-delay: 0.24s; }
 
 @keyframes pop {
   from { transform: scale(0); }
@@ -187,6 +186,20 @@ h2 { font-size: 1.5rem; margin-bottom: 1rem; }
 .np-green { background: var(--green); }
 
 .how-note { margin-top: 1.1rem; font-size: 0.95rem; opacity: 0.8; }
+
+/* ---- the shelf: one block per Daily game (CONTEXT.md: Daily) ---- */
+.games { display: grid; gap: 1.25rem; }
+.game {
+  background: #fff;
+  border-radius: 22px;
+  padding: 1.75rem 1.6rem;
+  box-shadow: 0 10px 30px rgba(59, 45, 63, 0.08);
+}
+.game h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+.game .share-card { margin-top: 1.6rem; }
+.game .pill { margin-top: 1.5rem; }
+.game-lead { opacity: 0.88; }
+.streak-note { margin-top: 1.5rem; font-size: 0.95rem; opacity: 0.8; text-align: center; }
 
 /* ---- app upsell ---- */
 .app {

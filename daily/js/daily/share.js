@@ -7,11 +7,19 @@
 
 const EMOJI = { green: '🟩', yellow: '🟨', grey: '⬜' };
 
-const SHARE_BASE = 'https://www.doremingo.com/daily/';
+const SHARE_BASE = 'https://www.doremingo.com/daily';
 
-/** Deep link to one game's Daily. The /daily/ deploy reads this hash (main.js). */
+/**
+ * Deep link to one game's Daily — e.g. https://www.doremingo.com/daily/sprint/.
+ *
+ * This is the app's own route, not a redirect: main.js routes on real paths,
+ * and bin/publish-web.sh stamps a real page per game so each unfurls its own
+ * card (a URL fragment never reaches a crawler, so the old #/sprint made every
+ * share preview identical). Keep the two in step — a new game needs a stamped
+ * page, or its shares 404.
+ */
 export function shareUrl(gameId) {
-  return `${SHARE_BASE}#/${gameId}`;
+  return `${SHARE_BASE}/${gameId}/`;
 }
 
 const gridOf = (rows) => rows.map((marks) => marks.map((m) => EMOJI[m]).join('')).join('\n');
